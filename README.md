@@ -89,7 +89,6 @@ monitor_docker:
       - db-dsmr
       - db-hass
       - deconz
-      - dsmr
       - hass
       - influxdb
       - mosquitto
