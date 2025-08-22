@@ -23,7 +23,6 @@ from .const import (
     ATTR_SERVER,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
-    CONF_SWITCHENABLED,
     CONFIG,
     CONTAINER,
     CONTAINER_INFO_STATE,
@@ -102,11 +101,6 @@ async def async_setup_platform(
     api: DockerAPI = hass.data[DOMAIN][instance][API]
     config: ConfigType = hass.data[DOMAIN][instance][CONFIG]
 
-    # Don't create any switch if disabled
-    if config[CONF_SWITCHENABLED] == False:
-        _LOGGER.debug("[%s]: Switch(es) are disabled", instance)
-        return True
-
     _LOGGER.debug("[%s]: Setting up switch(es)", instance)
 
     switches = []
@@ -126,21 +120,15 @@ async def async_setup_platform(
             includeContainer = False
 
         if includeContainer:
-            if (
-                config[CONF_SWITCHENABLED] == True
-                or cname in config[CONF_SWITCHENABLED]
-            ):
-                _LOGGER.debug("[%s] %s: Adding component Switch", instance, cname)
+            _LOGGER.debug("[%s] %s: Adding component Switch", instance, cname)
 
-                switches.append(
-                    DockerContainerSwitch(
-                        api.get_container(cname),
-                        instance=instance,
-                        cname=cname,
-                    )
+            switches.append(
+                DockerContainerSwitch(
+                    api.get_container(cname),
+                    instance=instance,
+                    cname=cname,
                 )
-            else:
-                _LOGGER.debug("[%s] %s: NOT Adding component Switch", instance, cname)
+            )
 
     if not switches:
         _LOGGER.info("[%s]: No containers set-up", instance)

@@ -118,7 +118,6 @@ monitor_docker:
 | rename                      | dictionary     (Optional)  | Dictionary of containers to rename. Default no renaming.              |
 | sensorname                  | string         (Optional)  | Sensor string to format the name used in Home Assistant. Defaults to `{name} {sensor}`, where `{name}` is the container name and `{sensor}` is e.g. Memory, Status, Network speed Up |
 | switchname                  | string         (Optional)  | Switch string to format the name used in Home Assistant. Defaults to `{name}`, where `{name}` is the container name. |
-| switchenabled               | boolean / list (Optional)  | Enable/Disable the switch entity for containers (Default: `True` Enabled switch for all containers, `False`: Disabled switch for all containers). Or specify a list of containers for which to enable switch entities. |
 | precision_cpu               | integer        (Optional)  | Precision of CPU usage percentage (Default: 2) |
 | precision_memory_mb         | integer        (Optional)  | Precision of memory usage in MB (Default: 2) |
 | precision_memory_percentage | integer        (Optional)  | Precision of memory usage in percentage (Default: 2) |

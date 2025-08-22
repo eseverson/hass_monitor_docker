@@ -24,7 +24,6 @@ from .const import (
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
     CONF_RENAME,
-    CONF_BUTTONENABLED,
     CONFIG,
     CONTAINER,
     CONTAINER_INFO_STATE,
@@ -104,11 +103,6 @@ async def async_setup_platform(
     api = hass.data[DOMAIN][name][API]
     config = hass.data[DOMAIN][name][CONFIG]
 
-    # Don't create any butoon if disabled
-    if config[CONF_BUTTONENABLED] == False:
-        _LOGGER.debug("[%s]: Button(s) are disabled", instance)
-        return True
-
     _LOGGER.debug("[%s]: Setting up button(s)", instance)
 
     buttons = []
@@ -128,21 +122,15 @@ async def async_setup_platform(
             includeContainer = False
 
         if includeContainer:
-            if (
-                config[CONF_BUTTONENABLED] == True
-                or cname in config[CONF_BUTTONENABLED]
-            ):
-                _LOGGER.debug("[%s] %s: Adding component Button", instance, cname)
+            _LOGGER.debug("[%s] %s: Adding component Button", instance, cname)
 
-                buttons.append(
-                    DockerContainerButton(
-                        api.get_container(cname),
-                        instance=instance,
-                        cname=cname,
-                    )
+            buttons.append(
+                DockerContainerButton(
+                    api.get_container(cname),
+                    instance=instance,
+                    cname=cname,
                 )
-            else:
-                _LOGGER.debug("[%s] %s: NOT Adding component Button", instance, cname)
+            )
 
     if not buttons:
         _LOGGER.info("[%s]: No containers set-up", instance)

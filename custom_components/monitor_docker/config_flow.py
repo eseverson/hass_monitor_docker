@@ -25,7 +25,6 @@ from homeassistant.helpers import issue_registry as ir, selector
 
 from .const import (
     API,
-    CONF_BUTTONENABLED,
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
@@ -38,7 +37,6 @@ from .const import (
     CONF_PRECISION_NETWORK_KB,
     CONF_PRECISION_NETWORK_MB,
     CONF_RETRY,
-    CONF_SWITCHENABLED,
     CONTAINER_MONITOR_LIST,
     CONTAINER_PRE_SELECTION,
     DEFAULT_NAME,
@@ -71,8 +69,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
         CONF_CONTAINERS_EXCLUDE: [],  # Not relevant as all are selected
         # Conditions
         CONF_MONITORED_CONDITIONS: [],
-        CONF_SWITCHENABLED: True,
-        CONF_BUTTONENABLED: False,
         CONF_MEMORYCHANGE: 100,
         CONF_PRECISION_CPU: PRECISION,
         CONF_PRECISION_MEMORY_MB: PRECISION,
@@ -259,12 +255,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
                         multiple=True,
                     ),
                 ),
-                vol.Required(
-                    CONF_SWITCHENABLED, default=self.data[CONF_SWITCHENABLED]
-                ): bool,
-                vol.Required(
-                    CONF_BUTTONENABLED, default=self.data[CONF_BUTTONENABLED]
-                ): bool,
                 vol.Required(
                     CONF_MEMORYCHANGE, default=self.data[CONF_MEMORYCHANGE]
                 ): int,
