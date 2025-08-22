@@ -763,11 +763,6 @@ class DockerAPI:
 
                 # Try to fix possible 0 values in history at start-up
                 if loopInit:
-                    self._info[DOCKER_STATS_CPU_PERCENTAGE] = round(
-                        self._info[DOCKER_STATS_CPU_PERCENTAGE],
-                        2,
-                    )
-
                     # Calculate for 0-100%
                     if self._info[DOCKER_STATS_CPU_PERCENTAGE] is None:
                         self._info[DOCKER_STATS_1CPU_PERCENTAGE] = None
