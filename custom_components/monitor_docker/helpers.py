@@ -36,11 +36,6 @@ from .const import (
     COMPONENTS,
     CONF_CERTPATH,
     CONF_MEMORYCHANGE,
-    CONF_PRECISION_CPU,
-    CONF_PRECISION_MEMORY_MB,
-    CONF_PRECISION_MEMORY_PERCENTAGE,
-    CONF_PRECISION_NETWORK_KB,
-    CONF_PRECISION_NETWORK_MB,
     CONF_RETRY,
     CONTAINER,
     CONTAINER_INFO_HEALTH,
@@ -69,23 +64,20 @@ from .const import (
     DOCKER_STATS_MEMORY,
     DOCKER_STATS_MEMORY_PERCENTAGE,
     DOMAIN,
-    PRECISION,
     VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def toKB(value: float, precision: int = PRECISION) -> float:
+def toKB(value: float) -> float:
     """Converts bytes to kBytes."""
-    precision = None if precision == 0 else precision
-    return round(value / (1024 ** 1), precision)
+    return value / (1024 ** 1)
 
 
-def toMB(value: float, precision: int = PRECISION) -> float:
+def toMB(value: float) -> float:
     """Converts bytes to MBytes."""
-    precision = None if precision == 0 else precision
-    return round(value / (1024 ** 2), precision)
+    return value / (1024 ** 2)
 
 
 #################################################################
@@ -765,50 +757,29 @@ class DockerAPI:
                     self._info[ATTR_MEMORY_LIMIT] is not None
                     and self._info[ATTR_MEMORY_LIMIT] != 0
                 ):
-                    self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = round(
-                        self._info[DOCKER_STATS_MEMORY]
-                        / toMB(self._info[ATTR_MEMORY_LIMIT], 4)
-                        * 100,
-                        self._config[CONF_PRECISION_MEMORY_PERCENTAGE],
+                    self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = (
+                        self._info[DOCKER_STATS_MEMORY] / toMB(self._info[ATTR_MEMORY_LIMIT]) * 100
                     )
 
                 # Try to fix possible 0 values in history at start-up
                 if loopInit:
                     self._info[DOCKER_STATS_CPU_PERCENTAGE] = round(
                         self._info[DOCKER_STATS_CPU_PERCENTAGE],
-                        self._config[CONF_PRECISION_CPU],
+                        2,
                     )
 
                     # Calculate for 0-100%
                     if self._info[DOCKER_STATS_CPU_PERCENTAGE] is None:
                         self._info[DOCKER_STATS_1CPU_PERCENTAGE] = None
                     else:
-                        self._info[DOCKER_STATS_1CPU_PERCENTAGE] = round(
-                            (
-                                self._info[DOCKER_STATS_CPU_PERCENTAGE]
-                                / self._info[ATTR_ONLINE_CPUS]
-                            ),
-                            self._config[CONF_PRECISION_CPU],
+                        self._info[DOCKER_STATS_1CPU_PERCENTAGE] = (
+                            self._info[DOCKER_STATS_CPU_PERCENTAGE] / self._info[ATTR_ONLINE_CPUS]
                         )
-
-                    self._info[DOCKER_STATS_MEMORY] = round(
-                        self._info[DOCKER_STATS_MEMORY],
-                        self._config[CONF_PRECISION_MEMORY_MB],
-                    )
-
-                    self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = round(
-                        self._info[DOCKER_STATS_MEMORY_PERCENTAGE],
-                        self._config[CONF_PRECISION_MEMORY_PERCENTAGE],
-                    )
+  
                 else:
-                    self._info[DOCKER_STATS_CPU_PERCENTAGE] = (
-                        None
-                        if self._info[DOCKER_STATS_CPU_PERCENTAGE] == 0.0
-                        else round(
-                            self._info[DOCKER_STATS_CPU_PERCENTAGE],
-                            self._config[CONF_PRECISION_CPU],
-                        )
-                    )
+                    if self._info[DOCKER_STATS_CPU_PERCENTAGE] == 0.0:
+                        self._info[DOCKER_STATS_CPU_PERCENTAGE] = None
+
 
                     # Calculate for 0-100%
                     if self._info[DOCKER_STATS_CPU_PERCENTAGE] == 0.0:
@@ -816,31 +787,16 @@ class DockerAPI:
                     elif self._info[DOCKER_STATS_CPU_PERCENTAGE] is None:
                         self._info[DOCKER_STATS_1CPU_PERCENTAGE] = None
                     else:
-                        self._info[DOCKER_STATS_1CPU_PERCENTAGE] = round(
-                            (
-                                self._info[DOCKER_STATS_CPU_PERCENTAGE]
-                                / self._info[ATTR_ONLINE_CPUS]
-                            ),
-                            self._config[CONF_PRECISION_CPU],
+                        self._info[DOCKER_STATS_1CPU_PERCENTAGE] =  (
+                            self._info[DOCKER_STATS_CPU_PERCENTAGE] / self._info[ATTR_ONLINE_CPUS]
                         )
 
-                    self._info[DOCKER_STATS_MEMORY] = (
-                        None
-                        if self._info[DOCKER_STATS_MEMORY] == 0.0
-                        else round(
-                            self._info[DOCKER_STATS_MEMORY],
-                            self._config[CONF_PRECISION_MEMORY_MB],
-                        )
-                    )
 
-                    self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = (
-                        None
-                        if self._info[DOCKER_STATS_MEMORY_PERCENTAGE] == 0.0
-                        else round(
-                            self._info[DOCKER_STATS_MEMORY_PERCENTAGE],
-                            self._config[CONF_PRECISION_MEMORY_PERCENTAGE],
-                        )
-                    )
+                    if self._info[DOCKER_STATS_MEMORY] == 0.0:
+                        self._info[DOCKER_STATS_MEMORY] = None
+
+                    if self._info[DOCKER_STATS_MEMORY_PERCENTAGE] == 0.0:
+                        self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = None
 
                 _LOGGER.debug(
                     "[%s]: Version: %s, Containers: %s, Running: %s, CPU: %s%%, 1CPU: %s%%, Memory: %sMB, %s%%",
@@ -1208,13 +1164,12 @@ class DockerContainerAPI:
                 cpu_delta = float(cpu_new["total"] - self._cpu_old["total"])
                 system_delta = float(cpu_new["system"] - self._cpu_old["system"])
 
-                cpu_stats["total"] = round(0.0, PRECISION)
+                cpu_stats["total"] = 0.0
                 if cpu_delta > 0.0 and system_delta > 0.0:
-                    cpu_stats["total"] = round(
+                    cpu_stats["total"] = (
                         (cpu_delta / system_delta)
                         * float(cpu_stats["online_cpus"])
-                        * 100.0,
-                        self._config[CONF_PRECISION_CPU],
+                        * 100.0
                     )
 
             self._cpu_old = cpu_new
@@ -1266,15 +1221,13 @@ class DockerContainerAPI:
                     cache = raw["memory_stats"]["stats"]["inactive_file"]
 
             memory_stats["usage"] = toMB(
-                raw["memory_stats"]["usage"] - cache,
-                self._config[CONF_PRECISION_MEMORY_MB],
+                raw["memory_stats"]["usage"] - cache
             )
             memory_stats["limit"] = toMB(
-                raw["memory_stats"]["limit"], self._config[CONF_PRECISION_MEMORY_MB]
+                raw["memory_stats"]["limit"]
             )
-            memory_stats["usage_percent"] = round(
-                float(memory_stats["usage"]) / float(memory_stats["limit"]) * 100.0,
-                self._config[CONF_PRECISION_MEMORY_PERCENTAGE],
+            memory_stats["usage_percent"] = (
+                float(memory_stats["usage"]) / float(memory_stats["limit"]) * 100.0
             )
 
             if self._memory_error > 0:
@@ -1400,20 +1353,18 @@ class DockerContainerAPI:
 
                     # Calculate speed, also convert to kByte/sec
                     network_stats["speed_tx"] = toKB(
-                        float(tx) / tim, self._config[CONF_PRECISION_NETWORK_KB]
-                    )
+                        float(tx) / tim )
                     network_stats["speed_rx"] = toKB(
-                        float(rx) / tim, self._config[CONF_PRECISION_NETWORK_KB]
-                    )
+                        float(rx) / tim )
 
                 self._network_old = network_new
 
                 # Convert total to MB
                 network_stats["total_tx"] = toMB(
-                    network_stats["total_tx"], self._config[CONF_PRECISION_NETWORK_MB]
+                    network_stats["total_tx"]
                 )
                 network_stats["total_rx"] = toMB(
-                    network_stats["total_rx"], self._config[CONF_PRECISION_NETWORK_MB]
+                    network_stats["total_rx"]
                 )
 
             except KeyError as err:
@@ -1455,9 +1406,8 @@ class DockerContainerAPI:
 
         stats[CONTAINER_STATS_CPU_PERCENTAGE] = cpu_stats.get("total")
         if "online_cpus" in cpu_stats and cpu_stats.get("total") is not None:
-            stats[CONTAINER_STATS_1CPU_PERCENTAGE] = round(
-                cpu_stats.get("total") / cpu_stats["online_cpus"],
-                self._config[CONF_PRECISION_CPU],
+            stats[CONTAINER_STATS_1CPU_PERCENTAGE] = (
+                cpu_stats.get("total") / cpu_stats["online_cpus"]
             )
 
         stats[CONTAINER_STATS_MEMORY] = memory_stats.get("usage")

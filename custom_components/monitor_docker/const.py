@@ -19,11 +19,6 @@ CONF_CONTAINERS_EXCLUDE = "containers_exclude"
 CONF_MEMORYCHANGE = "memorychange"
 CONF_MONITORED_CONTAINER_CONDITIONS = "monitored_container_conditions"
 CONF_MONITORED_DOCKER_CONDITIONS = "monitored_docker_conditions"
-CONF_PRECISION_CPU = "precision_cpu"
-CONF_PRECISION_MEMORY_MB = "precision_memory_mb"
-CONF_PRECISION_MEMORY_PERCENTAGE = "precision_memory_percentage"
-CONF_PRECISION_NETWORK_KB = "precision_network_kb"
-CONF_PRECISION_NETWORK_MB = "precision_network_mb"
 CONF_PREFIX = "prefix"
 CONF_RENAME = "rename"
 CONF_RENAME_ENITITY = "rename_entity"
@@ -43,7 +38,6 @@ COMPONENTS = ["sensor", "switch", "button"]
 
 SERVICE_RESTART = "restart"
 
-PRECISION = 2
 
 DOCKER_INFO_VERSION = "version"
 DOCKER_INFO_CONTAINER_RUNNING = "containers_running"
@@ -98,26 +92,31 @@ DOCKER_MONITOR_LIST = {
         key=DOCKER_INFO_CONTAINER_RUNNING,
         name="Containers Running",
         icon="mdi:docker",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     DOCKER_INFO_CONTAINER_PAUSED: SensorEntityDescription(
         key=DOCKER_INFO_CONTAINER_PAUSED,
         name="Containers Paused",
         icon="mdi:docker",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     DOCKER_INFO_CONTAINER_STOPPED: SensorEntityDescription(
         key=DOCKER_INFO_CONTAINER_STOPPED,
         name="Containers Stopped",
         icon="mdi:docker",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     DOCKER_INFO_CONTAINER_TOTAL: SensorEntityDescription(
         key=DOCKER_INFO_CONTAINER_TOTAL,
         name="Containers Total",
         icon="mdi:docker",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     DOCKER_STATS_CPU_PERCENTAGE: SensorEntityDescription(
         key=DOCKER_STATS_CPU_PERCENTAGE,
         name="CPU",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:chip",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -125,6 +124,7 @@ DOCKER_MONITOR_LIST = {
         key=DOCKER_STATS_1CPU_PERCENTAGE,
         name="1CPU",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:chip",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -132,6 +132,7 @@ DOCKER_MONITOR_LIST = {
         key=DOCKER_STATS_MEMORY,
         name="Memory",
         native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        suggested_display_precision=2,
         icon="mdi:memory",
         device_class=SensorDeviceClass.DATA_SIZE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -140,6 +141,7 @@ DOCKER_MONITOR_LIST = {
         key=DOCKER_STATS_MEMORY_PERCENTAGE,
         name="Memory (percent)",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:memory",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -147,6 +149,7 @@ DOCKER_MONITOR_LIST = {
         key=DOCKER_INFO_IMAGES,
         name="Images",
         icon="mdi:docker",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
 }
 
@@ -186,6 +189,7 @@ CONTAINER_MONITOR_LIST = {
         key=CONTAINER_STATS_CPU_PERCENTAGE,
         name="CPU",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:chip",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -193,6 +197,7 @@ CONTAINER_MONITOR_LIST = {
         key=CONTAINER_STATS_1CPU_PERCENTAGE,
         name="1CPU",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:chip",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -200,6 +205,7 @@ CONTAINER_MONITOR_LIST = {
         key=CONTAINER_STATS_MEMORY,
         name="Memory",
         native_unit_of_measurement=UnitOfInformation.MEBIBYTES,
+        suggested_display_precision=2,
         icon="mdi:memory",
         state_class=SensorStateClass.MEASUREMENT,
     ),
@@ -207,6 +213,7 @@ CONTAINER_MONITOR_LIST = {
         key=CONTAINER_STATS_MEMORY_PERCENTAGE,
         name="Memory (percent)",
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=2,
         icon="mdi:memory",
         state_class=SensorStateClass.MEASUREMENT,
     ),

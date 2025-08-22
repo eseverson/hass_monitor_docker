@@ -136,11 +136,7 @@ appdaemon: AppDaemon - Will match anything with "appdaemon"
 | rename_entity               | boolean        (Optional)  | If rename is enabled, it changes the name in HA Lovelace, not the entity name. Enable this setting to also rename the entity name (Default: False) |
 | sensorname                  | string         (Optional)  | Sensor string to format the name used in Home Assistant. Defaults to `{name} {sensor}`, where `{name}` is the container name and `{sensor}` is e.g. Memory, Status, Network speed Up |
 | switchname                  | string         (Optional)  | Switch string to format the name used in Home Assistant. Defaults to `{name}`, where `{name}` is the container name. |
-| precision_cpu               | integer        (Optional)  | Precision of CPU usage percentage (Default: 2) |
-| precision_memory_mb         | integer        (Optional)  | Precision of memory usage in MB (Default: 2) |
-| precision_memory_percentage | integer        (Optional)  | Precision of memory usage in percentage (Default: 2) |
-| precision_network_kb        | integer        (Optional)  | Precision of network bandwidth in kB (Default: 2) |
-| precision_network_mb        | integer        (Optional)  | Precision of network usage in MB (Default: 2) |
+
 
 | Monitored Conditions              | Description                     | Unit  |
 | --------------------------------- | ------------------------------- | ----- |

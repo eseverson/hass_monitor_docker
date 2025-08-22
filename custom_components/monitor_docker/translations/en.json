@@ -56,12 +56,7 @@
                 "data": {
                     "monitored_docker_conditions": "Conditions of the controller to be monitored",
                     "monitored_container_conditions": "Conditions of each container to be monitored",
-                    "memorychange": "Change of memory usage before alerting",
-                    "precision_cpu": "Precision of CPU usage percentage",
-                    "precision_memory_mb": "Precision of memory usage in MB",
-                    "precision_memory_percentage": "Precision of memory usage in percentage",
-                    "precision_network_kb": "Precision of network bandwidth in kB",
-                    "precision_network_mb": "Precision of network usage in MB"
+                    "memorychange": "Change of memory usage before alerting"
                 }
             }
         },

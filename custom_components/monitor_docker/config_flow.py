@@ -31,11 +31,6 @@ from .const import (
     CONF_MEMORYCHANGE,
     CONF_MONITORED_CONTAINER_CONDITIONS,
     CONF_MONITORED_DOCKER_CONDITIONS,
-    CONF_PRECISION_CPU,
-    CONF_PRECISION_MEMORY_MB,
-    CONF_PRECISION_MEMORY_PERCENTAGE,
-    CONF_PRECISION_NETWORK_KB,
-    CONF_PRECISION_NETWORK_MB,
     CONF_RETRY,
     CONTAINER_MONITOR_LIST,
     CONTAINER_PRE_SELECTION,
@@ -45,7 +40,6 @@ from .const import (
     DOCKER_MONITOR_LIST,
     DOCKER_PRE_SELECTION,
     DOMAIN,
-    PRECISION,
 )
 from .helpers import DockerAPI
 
@@ -70,11 +64,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
         # Conditions
         CONF_MONITORED_CONDITIONS: [],
         CONF_MEMORYCHANGE: 100,
-        CONF_PRECISION_CPU: PRECISION,
-        CONF_PRECISION_MEMORY_MB: PRECISION,
-        CONF_PRECISION_MEMORY_PERCENTAGE: PRECISION,
-        CONF_PRECISION_NETWORK_KB: PRECISION,
-        CONF_PRECISION_NETWORK_MB: PRECISION,
     }
     options = None
     _docker_api = None
@@ -257,25 +246,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
                 vol.Required(
                     CONF_MEMORYCHANGE, default=self.data[CONF_MEMORYCHANGE]
-                ): int,
-                vol.Required(
-                    CONF_PRECISION_CPU, default=self.data[CONF_PRECISION_CPU]
-                ): int,
-                vol.Required(
-                    CONF_PRECISION_MEMORY_MB,
-                    default=self.data[CONF_PRECISION_MEMORY_MB],
-                ): int,
-                vol.Required(
-                    CONF_PRECISION_MEMORY_PERCENTAGE,
-                    default=self.data[CONF_PRECISION_MEMORY_PERCENTAGE],
-                ): int,
-                vol.Required(
-                    CONF_PRECISION_NETWORK_KB,
-                    default=self.data[CONF_PRECISION_NETWORK_KB],
-                ): int,
-                vol.Required(
-                    CONF_PRECISION_NETWORK_MB,
-                    default=self.data[CONF_PRECISION_NETWORK_MB],
                 ): int,
             }
         )

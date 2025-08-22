@@ -32,11 +32,6 @@ from .const import (
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
     CONF_MEMORYCHANGE,
-    CONF_PRECISION_CPU,
-    CONF_PRECISION_MEMORY_MB,
-    CONF_PRECISION_MEMORY_PERCENTAGE,
-    CONF_PRECISION_NETWORK_KB,
-    CONF_PRECISION_NETWORK_MB,
     CONF_PREFIX,
     CONF_RENAME,
     CONF_RENAME_ENITITY,
@@ -54,7 +49,6 @@ from .const import (
     DEFAULT_BUTTONNAME,
     DOMAIN,
     MONITORED_CONDITIONS_LIST,
-    PRECISION,
 )
 from .helpers import DockerAPI
 
@@ -84,13 +78,6 @@ DOCKER_SCHEMA = vol.Schema(
         vol.Optional(CONF_CERTPATH, default=""): cv.string,
         vol.Optional(CONF_RETRY, default=DEFAULT_RETRY): cv.positive_int,
         vol.Optional(CONF_MEMORYCHANGE, default=100): cv.positive_int,
-        vol.Optional(CONF_PRECISION_CPU, default=PRECISION): cv.positive_int,
-        vol.Optional(CONF_PRECISION_MEMORY_MB, default=PRECISION): cv.positive_int,
-        vol.Optional(
-            CONF_PRECISION_MEMORY_PERCENTAGE, default=PRECISION
-        ): cv.positive_int,
-        vol.Optional(CONF_PRECISION_NETWORK_KB, default=PRECISION): cv.positive_int,
-        vol.Optional(CONF_PRECISION_NETWORK_MB, default=PRECISION): cv.positive_int,
     }
 )
 
