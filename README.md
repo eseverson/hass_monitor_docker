@@ -134,8 +134,6 @@ appdaemon: AppDaemon - Will match anything with "appdaemon"
 | monitored_conditions        | list           (Optional)  | Array of conditions to be monitored. Defaults to all conditions.      |
 | rename                      | dictionary     (Optional)  | Dictionary of containers to rename. Renaming is done on the name in HA Lovelace, not the entity name (see `rename_entity`). Default no renaming. |
 | rename_entity               | boolean        (Optional)  | If rename is enabled, it changes the name in HA Lovelace, not the entity name. Enable this setting to also rename the entity name (Default: False) |
-| sensorname                  | string         (Optional)  | Sensor string to format the name used in Home Assistant. Defaults to `{name} {sensor}`, where `{name}` is the container name and `{sensor}` is e.g. Memory, Status, Network speed Up |
-| switchname                  | string         (Optional)  | Switch string to format the name used in Home Assistant. Defaults to `{name}`, where `{name}` is the container name. |
 
 
 | Monitored Conditions              | Description                     | Unit  |

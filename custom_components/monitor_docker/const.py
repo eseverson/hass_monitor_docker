@@ -22,16 +22,10 @@ CONF_PREFIX = "prefix"
 CONF_RENAME = "rename"
 CONF_RENAME_ENITITY = "rename_entity"
 CONF_RETRY = "retry"
-CONF_SENSORNAME = "sensorname"
-CONF_SWITCHNAME = "switchname"
-CONF_BUTTONNAME = "buttonname"
 
 DEFAULT_NAME = "Docker"
 DEFAULT_RETRY = 60
 DEFAULT_SCAN_INTERVAL = 10
-DEFAULT_SENSORNAME = "{name} {sensor}"
-DEFAULT_SWITCHNAME = "{name}"
-DEFAULT_BUTTONNAME = "{name} Restart"
 
 COMPONENTS = ["sensor", "switch", "button"]
 
