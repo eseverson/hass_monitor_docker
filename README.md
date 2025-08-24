@@ -4,7 +4,13 @@
 
 ## About
 
-This repository contains the Monitor Docker component I developed for monitoring my Docker environment from [Home-Assistant](https://www.home-assistant.io). It is inspired by the Sander Huisman [Docker Monitor](https://github.com/Sanderhuisman/docker_monitor), where I switched mainly from threads to asyncio and added my own wishes/functionality. Feel free to use the component and report bugs if you find them. If you want to contribute, please report a bug or pull request, and I will reply as soon as possible.
+I am the third owner of this code-base. Sander Huisman initially started [Docker Monitor](https://github.com/Sanderhuisman/docker_monitor), which was then improved upon by Alexander (ualex73) in his version of [Docker Monitor](https://github.com/ualex73/docker_monitor). This repository is my adaption of Alexander's repository with some improvements:
+
+- Added a config flow (basis built by [dala318](https://github.com/ualex73/monitor_docker/issues/173))
+- Updated the naming of the entities
+- Simplified the configuration flow
+
+Possible extra changes may follow!
 
 ## Monitor Docker
 
@@ -271,6 +277,7 @@ monitor_docker:
 ## Credits
 
 * [Sanderhuisman](https://github.com/Sanderhuisman/docker_monitor)
+* [Alexander - ualex73](https://github.com/ualex73/monitor_docker)
 
 ## License
 
