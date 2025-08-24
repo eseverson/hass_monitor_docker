@@ -70,46 +70,6 @@ CONFIG_SCHEMA = vol.Schema(
 
 
 #################################################################
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Will setup the Monitor Docker platform."""
-
-    if DOMAIN not in config:
-        return True  # To continue with async_setup_entry
-
-    # Now go through all possible entries, we support 1 or more docker hosts (untested)
-    for entry in config[DOMAIN]:
-        # Default MONITORED_CONDITIONS_LIST also contains allinone, so we need to fix it up here
-        if len(entry[CONF_MONITORED_CONDITIONS]) == 0:
-            # Add whole list, including allinone. Make a copy, no reference
-            entry[CONF_MONITORED_CONDITIONS] = MONITORED_CONDITIONS_LIST.copy()
-            # remove the allinone
-            entry[CONF_MONITORED_CONDITIONS].remove(CONTAINER_INFO_ALLINONE)
-
-        # Check if CONF_MONITORED_CONDITIONS has only ALLINONE, then expand to all
-        if (
-            len(entry[CONF_MONITORED_CONDITIONS]) == 1
-            and CONTAINER_INFO_ALLINONE in entry[CONF_MONITORED_CONDITIONS]
-        ):
-            entry[CONF_MONITORED_CONDITIONS] = list(MONITORED_CONDITIONS_LIST) + list(
-                [CONTAINER_INFO_ALLINONE]
-            )
-
-        # Convert the entry to a config_entry
-        name = entry.get(CONF_NAME)
-        _LOGGER.debug("Starting config entry flow for %s with config %s", name, entry)
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN,
-                context={"source": config_entries.SOURCE_IMPORT},
-                data=entry,
-            )
-        )
-        return True
-
-    return True
-
-
-#################################################################
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up this integration using UI."""
 
@@ -141,10 +101,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN][entry.data[CONF_NAME]][API] = api
 
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     except ConfigEntryAuthFailed:
         # if api:
         #     await api.destroy()
         raise
+
     except Exception as err:
         _LOGGER.error(
             "[%s]: Failed to setup, error=%s", entry.data[CONF_NAME], str(err)
@@ -220,14 +182,6 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             installed_minor_version,
         )
         return False
-
-    # Fake update function, just as an example
-    # def data_1_1_to_1_2(data: dict):
-    #     OLD_CERTPATH = "old_certpath_key"
-    #     if certpath := data.pop("OLD_CERTPATH", None):
-    #         data[CONF_CERTPATH] = certpath
-    #         return data
-    #     raise MigrateError(f'Could not find "{OLD_CERTPATH}" in data')
 
     try:
         if entry.version == 1:
