@@ -69,12 +69,12 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-def toKB(value: float) -> float:
+def BtoKB(value: float) -> float:
     """Converts bytes to kBytes."""
-    return value / (1024 ** 1)
+    return value / 1024
 
 
-def toMB(value: float) -> float:
+def BtoMB(value: float) -> float:
     """Converts bytes to MBytes."""
     return value / (1024 ** 2)
 
@@ -757,7 +757,7 @@ class DockerAPI:
                     and self._info[ATTR_MEMORY_LIMIT] != 0
                 ):
                     self._info[DOCKER_STATS_MEMORY_PERCENTAGE] = (
-                        self._info[DOCKER_STATS_MEMORY] / toMB(self._info[ATTR_MEMORY_LIMIT]) * 100
+                        self._info[DOCKER_STATS_MEMORY] / BtoMB(self._info[ATTR_MEMORY_LIMIT]) * 100
                     )
 
                 # Try to fix possible 0 values in history at start-up
@@ -1209,8 +1209,8 @@ class DockerContainerAPI:
                 elif "inactive_file" in raw["memory_stats"]["stats"]:
                     cache = raw["memory_stats"]["stats"]["inactive_file"]
 
-            memory_stats["usage"] = toMB( raw["memory_stats"]["usage"] - cache )
-            memory_stats["limit"] = toMB( raw["memory_stats"]["limit"] )
+            memory_stats["usage"] = BtoMB( raw["memory_stats"]["usage"] - cache )
+            memory_stats["limit"] = BtoMB( raw["memory_stats"]["limit"] )
             memory_stats["usage_percent"] = (
                 float(memory_stats["usage"]) / float(memory_stats["limit"]) * 100.0
             )
@@ -1283,18 +1283,18 @@ class DockerContainerAPI:
                     ).total_seconds()
 
                     # Calculate speed, also convert to kByte/sec
-                    network_stats["speed_tx"] = toKB(
+                    network_stats["speed_tx"] = BtoKB(
                         float(tx) / tim )
-                    network_stats["speed_rx"] = toKB(
+                    network_stats["speed_rx"] = BtoKB(
                         float(rx) / tim )
 
                 self._network_old = network_new
 
                 # Convert total to MB
-                network_stats["total_tx"] = toMB(
+                network_stats["total_tx"] = BtoMB(
                     network_stats["total_tx"]
                 )
-                network_stats["total_rx"] = toMB(
+                network_stats["total_rx"] = BtoMB(
                     network_stats["total_rx"]
                 )
 
