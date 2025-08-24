@@ -55,8 +55,7 @@
                 "description": "Setup a connection to docker host",
                 "data": {
                     "monitored_docker_conditions": "Conditions of the controller to be monitored",
-                    "monitored_container_conditions": "Conditions of each container to be monitored",
-                    "memorychange": "Change of memory usage before alerting"
+                    "monitored_container_conditions": "Conditions of each container to be monitored"
                 }
             }
         },

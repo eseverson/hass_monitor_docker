@@ -35,7 +35,6 @@ from .const import (
     ATTR_VERSION_OS_TYPE,
     COMPONENTS,
     CONF_CERTPATH,
-    CONF_MEMORYCHANGE,
     CONF_RETRY,
     CONTAINER,
     CONTAINER_INFO_HEALTH,
@@ -866,7 +865,6 @@ class DockerContainerAPI:
         self._config = config
         self._api = api
         self._instance: str = config[CONF_NAME]
-        self._memChange: int = config[CONF_MEMORYCHANGE]
         self._name = cname
         self._interval: int = config[CONF_SCAN_INTERVAL]
         self._retry_interval: int = config[CONF_RETRY]
@@ -879,10 +877,6 @@ class DockerContainerAPI:
         self._network_error = 0
         self._memory_error = 0
         self._cpu_error = 0
-        self._memory_prev: float | None = None
-        self._memory_prev_breach = False
-        self._memory_percent_prev: float | None = None
-        self._memory_percent_prev_breach = False
 
         self._info: dict[str, Any] = {}
         self._stats: dict[str, Any] = {}
@@ -1215,12 +1209,8 @@ class DockerContainerAPI:
                 elif "inactive_file" in raw["memory_stats"]["stats"]:
                     cache = raw["memory_stats"]["stats"]["inactive_file"]
 
-            memory_stats["usage"] = toMB(
-                raw["memory_stats"]["usage"] - cache
-            )
-            memory_stats["limit"] = toMB(
-                raw["memory_stats"]["limit"]
-            )
+            memory_stats["usage"] = toMB( raw["memory_stats"]["usage"] - cache )
+            memory_stats["limit"] = toMB( raw["memory_stats"]["limit"] )
             memory_stats["usage_percent"] = (
                 float(memory_stats["usage"]) / float(memory_stats["limit"]) * 100.0
             )
@@ -1267,60 +1257,6 @@ class DockerContainerAPI:
             memory_stats.get("usage", None),
             memory_stats.get("usage_percent", None),
         )
-
-        # Default value
-        mem_breach = False
-
-        # Try to figure out if we should report the memory value or not
-        if (
-            memory_stats.get("usage", None)
-            and self._memory_prev
-            and not self._memory_prev_breach
-        ):
-            mem_diff = abs((memory_stats["usage"] / self._memory_prev) - 1) * 100
-
-            if self._memChange < 100 and mem_diff >= self._memChange:
-                mem_breach = True
-
-            _LOGGER.debug(
-                "[%s] %s: Mem Diff: %s%%, Curr: %s, Prev: %s, Breach: %s",
-                self._instance,
-                self._name,
-                round(mem_diff, 3),
-                memory_stats.get("usage", None),
-                self._memory_prev,
-                mem_breach,
-            )
-
-        else:
-            self._memory_prev_breach = False
-
-        """
-        self._memory_prev = None
-        self._memory_prev_breach = False
-        self._memory_percent_prev = None
-        self._memory_percent_prev_breach = False
-        """
-
-        # Check if we should block the current value or not
-        if mem_breach and not self._memory_prev_breach:
-            _LOGGER.debug(
-                "[%s] %s: Memory breach %s%%", self._instance, self._name, mem_breach
-            )
-
-            # Store values into previous
-            tmp1 = self._memory_prev
-            tmp2 = self._memory_percent_prev
-            self._memory_prev = memory_stats.get("usage", None)
-            self._memory_prev_breach = mem_breach
-            self._memory_percent_prev = memory_stats.get("usage_percent", None)
-            memory_stats["usage"] = tmp1
-            memory_stats["usage_percent"] = tmp2
-        else:
-            # Store values into previous
-            self._memory_prev = memory_stats.get("usage", None)
-            self._memory_prev_breach = mem_breach
-            self._memory_percent_prev = memory_stats.get("usage_percent", None)
 
         # Gather network information, doesn't work in network=host mode
         network_stats: dict[str, int | float] = {}

@@ -28,7 +28,6 @@ from .const import (
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
-    CONF_MEMORYCHANGE,
     CONF_MONITORED_CONTAINER_CONDITIONS,
     CONF_MONITORED_DOCKER_CONDITIONS,
     CONF_RETRY,
@@ -63,7 +62,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
         CONF_CONTAINERS_EXCLUDE: [],  # Not relevant as all are selected
         # Conditions
         CONF_MONITORED_CONDITIONS: [],
-        CONF_MEMORYCHANGE: 100,
     }
     options = None
     _docker_api = None
@@ -83,7 +81,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
             # Convert some user_input data as preparation to calling API
             if user_input[CONF_URL] == "":
                 user_input[CONF_URL] = None
-            user_input[CONF_MEMORYCHANGE] = self.data[CONF_MEMORYCHANGE]
 
             # Test connection to Docker
             try:
@@ -244,9 +241,6 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
                         multiple=True,
                     ),
                 ),
-                vol.Required(
-                    CONF_MEMORYCHANGE, default=self.data[CONF_MEMORYCHANGE]
-                ): int,
             }
         )
 

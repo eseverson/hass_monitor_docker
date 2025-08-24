@@ -31,7 +31,6 @@ from .const import (
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
-    CONF_MEMORYCHANGE,
     CONF_PREFIX,
     CONF_RENAME,
     CONF_RENAME_ENITITY,
@@ -77,7 +76,6 @@ DOCKER_SCHEMA = vol.Schema(
         vol.Optional(CONF_BUTTONNAME, default=DEFAULT_BUTTONNAME): cv.string,
         vol.Optional(CONF_CERTPATH, default=""): cv.string,
         vol.Optional(CONF_RETRY, default=DEFAULT_RETRY): cv.positive_int,
-        vol.Optional(CONF_MEMORYCHANGE, default=100): cv.positive_int,
     }
 )
 
