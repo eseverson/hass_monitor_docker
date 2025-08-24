@@ -31,9 +31,6 @@ from .const import (
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
-    CONF_PREFIX,
-    CONF_RENAME,
-    CONF_RENAME_ENITITY,
     CONF_RETRY,
     CONFIG,
     CONTAINER_INFO_ALLINONE,
@@ -52,7 +49,6 @@ PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
 DOCKER_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_PREFIX, default=""): cv.string,
         vol.Optional(CONF_URL, default=None): vol.Any(cv.string, None),
         vol.Optional(
             CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
@@ -63,8 +59,6 @@ DOCKER_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_CONTAINERS, default=[]): cv.ensure_list,
         vol.Optional(CONF_CONTAINERS_EXCLUDE, default=[]): cv.ensure_list,
-        vol.Optional(CONF_RENAME, default={}): dict,
-        vol.Optional(CONF_RENAME_ENITITY, default=False): cv.boolean,
         vol.Optional(CONF_CERTPATH, default=""): cv.string,
         vol.Optional(CONF_RETRY, default=DEFAULT_RETRY): cv.positive_int,
     }
