@@ -128,14 +128,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-
-#################################################################
-async def async_reset_platform(hass: HomeAssistant, integration_name: str) -> None:
-    """Reload the integration."""
-    if DOMAIN not in hass.data:
-        _LOGGER.error("Monitor_docker not loaded")
-
-
 #################################################################
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove a config entry."""
