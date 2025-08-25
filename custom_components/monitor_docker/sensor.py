@@ -132,12 +132,11 @@ async def async_setup_platform(
             if allinone:
                 monitor_conditions = []
                 for variable in config[CONF_MONITORED_CONDITIONS]:
+                    # The variable must be in the monitor list and either:
+                    # - not a network variable
+                    # - a network variable with an available network
                     if variable in CONTAINER_MONITOR_LIST and (
-                        network_available
-                        or (
-                            not network_available
-                            and variable not in CONTAINER_MONITOR_NETWORK_LIST
-                        )
+                        network_available or variable not in CONTAINER_MONITOR_NETWORK_LIST
                     ):
                         monitor_conditions += [variable]
 
@@ -152,12 +151,11 @@ async def async_setup_platform(
                 ]
             else:
                 for variable in config[CONF_MONITORED_CONDITIONS]:
+                    # The variable must be in the monitor list and either:
+                    # - not a network variable
+                    # - a network variable with an available network
                     if variable in CONTAINER_MONITOR_LIST and (
-                        network_available
-                        or (
-                            not network_available
-                            and variable not in CONTAINER_MONITOR_NETWORK_LIST
-                        )
+                        network_available or variable not in CONTAINER_MONITOR_NETWORK_LIST
                     ):
                         sensors += [
                             DockerContainerSensor(
