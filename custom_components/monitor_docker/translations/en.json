@@ -42,7 +42,8 @@
                 "description": "Select which containers to monitor",
                 "data": {
                     "containers": "Array of containers to monitor (keep empty to add all, and new)",
-                    "containers_exclude": "Array of containers to be excluded from monitoring, when all containers are included"
+                    "containers_exclude": "Array of containers to be excluded from monitoring, when all containers are included",
+                    "ignore_ephemeral": "Ignore ephemeral containers (--rm or no restart policy)"
                 }
             },
             "containers_rename": {

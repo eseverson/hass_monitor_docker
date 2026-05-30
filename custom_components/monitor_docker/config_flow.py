@@ -28,6 +28,7 @@ from .const import (
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
+    CONF_IGNORE_EPHEMERAL,
     CONF_MONITORED_CONTAINER_CONDITIONS,
     CONF_MONITORED_DOCKER_CONDITIONS,
     CONF_RETRY,
@@ -60,6 +61,7 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
         # Containers
         CONF_CONTAINERS: [],
         CONF_CONTAINERS_EXCLUDE: [],  # Not relevant as all are selected
+        CONF_IGNORE_EPHEMERAL: False,
         # Conditions
         CONF_MONITORED_CONDITIONS: [],
     }
@@ -183,7 +185,11 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
                         options=list(self._docker_api.list_containers()),
                         multiple=True,
                     ),
-                )
+                ),
+                vol.Optional(
+                    CONF_IGNORE_EPHEMERAL,
+                    default=self.data[CONF_IGNORE_EPHEMERAL],
+                ): selector.BooleanSelector(),
             }
         )
 

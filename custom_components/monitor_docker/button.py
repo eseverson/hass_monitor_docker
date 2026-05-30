@@ -22,14 +22,18 @@ from .const import (
     ATTR_NAME,
     ATTR_SERVER,
     CONF_CONTAINERS,
-    CONF_CONTAINERS_EXCLUDE,
     CONFIG,
     CONTAINER,
     CONTAINER_INFO_STATE,
     DOMAIN,
     SERVICE_RESTART,
 )
-from .helpers import DockerAPI, DockerContainerAPI, DockerContainerEntity
+from .helpers import (
+    DockerAPI,
+    DockerContainerAPI,
+    DockerContainerEntity,
+    should_include_container,
+)
 
 
 SERVICE_RESTART_SCHEMA = vol.Schema({ATTR_NAME: cv.string, ATTR_SERVER: cv.string})
@@ -113,14 +117,7 @@ async def async_setup_platform(
         clist = api.list_containers()
 
     for cname in clist:
-        includeContainer = False
-        if cname in config[CONF_CONTAINERS] or not config[CONF_CONTAINERS]:
-            includeContainer = True
-
-        if config[CONF_CONTAINERS_EXCLUDE] and cname in config[CONF_CONTAINERS_EXCLUDE]:
-            includeContainer = False
-
-        if includeContainer:
+        if should_include_container(cname, config, api):
             _LOGGER.debug("[%s] %s: Adding component Button", instance, cname)
 
             buttons.append(

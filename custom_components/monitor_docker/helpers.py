@@ -35,12 +35,17 @@ from .const import (
     ATTR_VERSION_OS_TYPE,
     COMPONENTS,
     CONF_CERTPATH,
+    CONF_CONTAINERS,
+    CONF_CONTAINERS_EXCLUDE,
+    CONF_IGNORE_EPHEMERAL,
     CONF_RETRY,
     CONTAINER,
+    CONTAINER_INFO_AUTOREMOVE,
     CONTAINER_INFO_HEALTH,
     CONTAINER_INFO_IMAGE,
     CONTAINER_INFO_IMAGE_HASH,
     CONTAINER_INFO_NETWORK_AVAILABLE,
+    CONTAINER_INFO_RESTART_POLICY,
     CONTAINER_INFO_STATE,
     CONTAINER_INFO_STATUS,
     CONTAINER_INFO_UPTIME,
@@ -77,6 +82,33 @@ def BtoKB(value: float) -> float:
 def BtoMB(value: float) -> float:
     """Converts bytes to MBytes."""
     return value / (1024 ** 2)
+
+
+def should_include_container(cname: str, config: dict, api: "DockerAPI") -> bool:
+    """Decide if entities should be created for `cname` given the config.
+
+    Order:
+    1. CONF_CONTAINERS_EXCLUDE always wins.
+    2. If CONF_CONTAINERS is set, only those names are included (explicit allowlist
+       overrides the ephemeral check).
+    3. Otherwise, if CONF_IGNORE_EPHEMERAL is on, exclude containers Docker marks
+       as ephemeral: HostConfig.AutoRemove=true (--rm) or RestartPolicy.Name=no.
+    """
+    if config.get(CONF_CONTAINERS_EXCLUDE) and cname in config[CONF_CONTAINERS_EXCLUDE]:
+        return False
+
+    if config.get(CONF_CONTAINERS):
+        return cname in config[CONF_CONTAINERS]
+
+    if config.get(CONF_IGNORE_EPHEMERAL):
+        capi = api.get_container(cname)
+        info = capi.get_info() if capi else {}
+        if info.get(CONTAINER_INFO_AUTOREMOVE):
+            return False
+        if info.get(CONTAINER_INFO_RESTART_POLICY) == "no":
+            return False
+
+    return True
 
 
 #################################################################
@@ -1053,6 +1085,11 @@ class DockerContainerAPI:
         self._info[CONTAINER_INFO_STATE] = raw["State"]["Status"]
         self._info[CONTAINER_INFO_IMAGE] = raw["Config"]["Image"]
         self._info[CONTAINER_INFO_IMAGE_HASH] = raw["Image"]
+        host_config = raw.get("HostConfig") or {}
+        self._info[CONTAINER_INFO_AUTOREMOVE] = bool(host_config.get("AutoRemove"))
+        self._info[CONTAINER_INFO_RESTART_POLICY] = (
+            host_config.get("RestartPolicy") or {}
+        ).get("Name") or "no"
 
         if self._network_error <= 5:
             if CONTAINER_INFO_NETWORK_AVAILABLE not in self._info:
