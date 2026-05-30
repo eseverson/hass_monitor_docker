@@ -15,7 +15,7 @@ from homeassistant.const import (
     CONF_URL,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import (
     ConfigEntryNotReady,
     ConfigEntryError,
@@ -40,7 +40,7 @@ from .const import (
     DOMAIN,
     MONITORED_CONDITIONS_LIST,
 )
-from .helpers import DockerAPI
+from .helpers import DockerAPI, should_include_container
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -102,6 +102,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+        _cleanup_stale_devices(hass, entry, api)
+
     except ConfigEntryAuthFailed:
         # if api:
         #     await api.destroy()
@@ -115,6 +117,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await api.destroy()
         raise ConfigEntryNotReady(f"Failed to setup {err}") from err
 
+    return True
+
+
+#################################################################
+@callback
+def _cleanup_stale_devices(
+    hass: HomeAssistant, entry: ConfigEntry, api: DockerAPI
+) -> None:
+    """Remove container devices whose container is no longer monitored.
+
+    Runs after platforms set up. A device is pruned only if it carries a
+    `(DOMAIN, "<instance>_container_<name>")` identifier that no longer matches
+    a currently-monitored container (removed from Docker, excluded by config, or
+    filtered as ephemeral). The host device uses a different identifier and is
+    left untouched.
+    """
+    config = entry.data
+    instance = config[CONF_NAME]
+    prefix = f"{instance}_container_"
+    expected = {
+        f"{instance}_container_{cname}"
+        for cname in api.list_containers()
+        if should_include_container(cname, config, api)
+    }
+
+    dev_reg = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+        container_idents = {
+            ident
+            for (domain, ident) in device.identifiers
+            if domain == DOMAIN and ident.startswith(prefix)
+        }
+        if container_idents and not (container_idents & expected):
+            _LOGGER.info(
+                "[%s]: Removing stale device %s",
+                instance,
+                device.name or device.id,
+            )
+            dev_reg.async_remove_device(device.id)
+
+
+#################################################################
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ConfigEntry, device
+) -> bool:
+    """Allow the user to manually delete a container device from the UI."""
     return True
 
 
