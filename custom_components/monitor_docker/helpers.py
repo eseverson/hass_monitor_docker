@@ -24,6 +24,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.discovery import load_platform
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -34,6 +35,7 @@ from .const import (
     ATTR_VERSION_OS,
     ATTR_VERSION_OS_TYPE,
     COMPONENTS,
+    SIGNAL_ADD_CONTAINER,
     CONF_CERTPATH,
     CONF_CONTAINERS,
     CONF_CONTAINERS_EXCLUDE,
@@ -692,14 +694,15 @@ class DockerAPI:
             # Lets wait 1 second before we try to create sensors/switches/buttons
             await asyncio.sleep(1)
 
-            for component in COMPONENTS:
-                load_platform(
-                    self._hass,
-                    component,
-                    DOMAIN,
-                    {CONF_NAME: self._instance, CONTAINER: cname},
-                    self._config,
-                )
+            # Add the entities through the config-entry-bound platforms (via the
+            # dispatcher listener each platform registers). Using load_platform
+            # here would create them on a discovery platform with no config
+            # entry, so HA would not register a device for the container.
+            async_dispatcher_send(
+                self._hass,
+                SIGNAL_ADD_CONTAINER.format(self._instance),
+                cname,
+            )
         else:
             _LOGGER.error(
                 "[%s] %s: Problem during start of monitoring", self._instance, cname

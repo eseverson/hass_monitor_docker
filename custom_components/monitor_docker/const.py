@@ -27,6 +27,11 @@ DEFAULT_SCAN_INTERVAL = 10
 
 COMPONENTS = ["sensor", "switch", "button"]
 
+# Dispatcher signal fired (per instance) when a container is added while HASS is
+# already running. Platforms listen so the new entities are created through the
+# config-entry-bound platform, which is what makes HA register the device.
+SIGNAL_ADD_CONTAINER = DOMAIN + "_add_container_{}"
+
 SERVICE_RESTART = "restart"
 
 
