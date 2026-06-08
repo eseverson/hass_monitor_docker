@@ -183,7 +183,9 @@ class DockerContainerSwitch(SwitchEntity, DockerContainerEntity):
         self._attr_has_entity_name = True
         self._attr_name = None
 
-        self.entity_id = f"switch.{self._instance}_{self._cname}"
+        self.entity_id = ENTITY_ID_FORMAT.format(
+            slugify(f"{self._instance}_{self._cname}")
+        )
         self._removed = False
 
     @property
