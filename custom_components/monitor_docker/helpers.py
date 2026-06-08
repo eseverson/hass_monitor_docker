@@ -761,10 +761,13 @@ class DockerAPI:
                 # Now go through all containers and get the cpu/memory stats
                 for container in self._containers.values():
                     if container is None:
-                        _LOGGER.warning(
-                            "[%s]: run_docker_info container is not yet initilized",
+                        # Container is registered but not yet initialized (race
+                        # with run()'s init loop at start-up); skip until ready.
+                        _LOGGER.debug(
+                            "[%s]: run_docker_info container is not yet initialized",
                             self._instance,
                         )
+                        continue
                     try:
                         info = container.get_info()
                         if info.get(CONTAINER_INFO_STATE) == "running":
