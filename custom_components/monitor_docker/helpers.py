@@ -12,7 +12,11 @@ from typing import Any, Callable
 import aiodocker
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.device_registry import (
+    DeviceEntryType,
+    DeviceInfo,
+    async_get as async_get_device_registry,
+)
 from homeassistant.helpers.entity import Entity
 import homeassistant.util.dt as dt_util
 from dateutil import parser, relativedelta
@@ -1597,11 +1601,35 @@ class DockerContainerEntity(Entity):
     ) -> None:
         """Initialize the base for Container entities."""
         container_info = container.get_info()
+        self._host_identifier = (DOMAIN, f"{instance}_{container._config[CONF_URL]}")
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{instance}_container_{cname}")},
             name=cname,
             manufacturer="Docker",
             model="Docker Container",
             entry_type=DeviceEntryType.SERVICE,
-            via_device=(DOMAIN, f"{instance}_{container._config[CONF_URL]}"),
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info, linked to the Docker host device.
+
+        The link has to be resolved here rather than in __init__, because
+        via_device_id takes the host device's registry id and hass is not set yet
+        at construction time. The old via_device, which took the identifier tuple
+        instead, is gone: passing it makes HA raise from async_get_or_create
+        whenever it cannot pin the deprecated call on an integration stack frame,
+        which is every container entity whose first update suspends — so all of
+        them were dropped at startup. async_setup_entry registers the host device
+        before forwarding the platforms, so the lookup below always resolves.
+        """
+        device_info = DeviceInfo(self._attr_device_info or {})
+        config_entry = self.platform.config_entry if self.platform else None
+        if self.hass is None or config_entry is None:
+            return device_info
+        host = async_get_device_registry(self.hass).async_get_device_by_identifier(
+            self._host_identifier, config_entry.entry_id
+        )
+        if host is not None:
+            device_info["via_device_id"] = host.id
+        return device_info
