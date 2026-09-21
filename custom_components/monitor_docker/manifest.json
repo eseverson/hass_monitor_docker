@@ -1,12 +1,12 @@
 {
   "domain": "monitor_docker",
   "name": "Monitor Docker",
-  "codeowners": ["@Getslow6"],
+  "codeowners": ["@eseverson"],
   "config_flow": true,
-  "documentation": "https://github.com/Getslow6/monitor_docker",
+  "documentation": "https://code.stuntkitty.net/me/hass-monitor-docker",
   "integration_type": "hub",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/Getslow6/monitor_docker/issues",
+  "issue_tracker": "https://code.stuntkitty.net/me/hass-monitor-docker/issues",
   "requirements": ["aiodocker==0.24.0", "python-dateutil==2.9.0.post0"],
   "version": "2.0b0"
 }
