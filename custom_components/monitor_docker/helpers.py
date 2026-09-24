@@ -1,7 +1,6 @@
 """Monitor Docker API helper."""
 
 import asyncio
-import concurrent
 import logging
 import os
 import ssl
@@ -121,11 +120,17 @@ def should_include_container(cname: str, config: dict, api: "DockerAPI") -> bool
 class DockerAPI:
     """Docker API abstraction allowing multiple Docker instances beeing monitored."""
 
-    def __init__(self, hass: HomeAssistant, config: ConfigType):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigType,
+        on_disconnect: Callable[[], None] | None = None,
+    ):
         """Initialize the Docker API."""
 
         self._hass = hass
         self._config = config
+        self._on_disconnect = on_disconnect
         self._instance: str = config[CONF_NAME]
         self._containers: dict[str, DockerContainerAPI] = {}
         self._tasks: dict[str, asyncio.Task] = {}
@@ -273,6 +278,10 @@ class DockerAPI:
             _LOGGER.error(
                 "[%s]: Docker API connection failed: %s", self._instance, str(err)
             )
+            # aiodocker reports "cannot connect" as status 900; that is the daemon
+            # being down or restarting, which setup retries, not bad credentials
+            if err.status == 900:
+                raise
             raise ConfigEntryAuthFailed from err
         except Exception:
             raise
@@ -361,11 +370,23 @@ class DockerAPI:
         # Cancel the containers
 
         for container in self._containers.values():
+            # Registered by init() but never started by run()
+            if container is None:
+                continue
             _LOGGER.debug(
                 "[%s] %s: Container cancelled", self._instance, container._name
             )
             await container.destroy()
             # TBD clear container from list?
+
+        # Stop aiodocker's event stream task and release its connection
+        if self._api is not None:
+            try:
+                await self._api.close()
+            except Exception as err:
+                _LOGGER.debug(
+                    "[%s]: Closing Docker API failed '%s'", self._instance, str(err)
+                )
 
         # Close session if initialized
         if self._tcp_session:
@@ -400,40 +421,6 @@ class DockerAPI:
         """Stop the monitor thread."""
 
         _LOGGER.info("[%s]: Stopping Monitor Docker thread", self._instance)
-
-    #############################################################
-    async def _reconnectx(self):
-        while True:
-            _LOGGER.debug("[%s] Reconnecting", self._instance)
-
-            try:
-                await self.init()
-                break
-            except Exception as err:
-                _LOGGER.error(
-                    "[%s] Failed Docker connect (%s). Retry in %d seconds",
-                    self._instance,
-                    str(err),
-                    self._retry_interval,
-                )
-                await asyncio.sleep(self._retry_interval)
-
-        _LOGGER.debug("[%s] Reconnect success", self._instance)
-
-    #############################################################
-    def remove_entities(self) -> None:
-        """Remove docker info entities."""
-
-        if len(self._subscribers) > 0:
-            _LOGGER.debug(
-                "[%s]: Removing entities from Docker info",
-                self._instance,
-            )
-
-        for callback in self._subscribers:
-            callback(remove=True)
-
-        self._subscriber: list[Callable] = []
 
     #############################################################
     def register_callback(self, callback: Callable, variable: str) -> None:
@@ -474,32 +461,18 @@ class DockerAPI:
 
                 # When we receive none, the connection normally is broken
                 if event is None:
-                    _LOGGER.error("[%s]: run_docker_events loop ended", self._instance)
+                    _LOGGER.warning(
+                        "[%s]: Docker event stream ended (daemon restarted?), reloading",
+                        self._instance,
+                    )
 
                     # Set this to know if we stopped or HASS is stopping
                     self._dockerStopped = True
 
-                    # Remove the docker info sensors
-                    self.remove_entities()
-
-                    # Remove all the sensors/switches/buttons, they will be auto created if connection is working again
-                    for cname in list(self._containers.keys()):
-                        try:
-                            await self._container_remove(cname)
-                        except Exception as err:
-                            exc_info = True if str(err) == "" else False
-                            _LOGGER.error(
-                                "[%s]: Stopping gave an error %s",
-                                self._instance,
-                                str(err),
-                                exc_info=exc_info,
-                            )
-
-                    # Stop everything and return to the main thread
-                    self._monitor_stop(self._config[CONF_NAME])
-
-                    # TODO: improve reconnectx
-                    await self._reconnectx()
+                    # A reload tears everything down and sets it up again, retrying
+                    # (ConfigEntryNotReady) until the daemon accepts connections
+                    if self._on_disconnect is not None and not self._hass.is_stopping:
+                        self._on_disconnect()
 
                     break
 
@@ -1028,27 +1001,19 @@ class DockerContainerAPI:
                 # No error, so normal interval
                 error = False
 
-            except concurrent.futures._base.CancelledError:
+            except asyncio.CancelledError:
+                # cancel_task()/destroy() stop this loop; swallowing the
+                # cancellation would leave it polling a stale container forever
                 _LOGGER.debug(
-                    "[%s] %s: Container received concurrent.futures._base.CancelledError",
-                    self._instance,
-                    self._name,
+                    "[%s] %s: Container task cancelled", self._instance, self._name
                 )
-                pass
-                break
+                raise
             except aiodocker.exceptions.DockerError as err:
                 _LOGGER.error(
                     "[%s] %s: Container not available anymore (3a) (%s). Retry in %d seconds",
                     self._instance,
                     self._name,
                     str(err),
-                    self._retry_interval,
-                )
-            except asyncio.exceptions.CancelledError as err:
-                _LOGGER.error(
-                    "[%s] %s: Container not available anymore (3c) CancelledError. Retry in %d seconds",
-                    self._instance,
-                    self._name,
                     self._retry_interval,
                 )
             except asyncio.TimeoutError as err:
