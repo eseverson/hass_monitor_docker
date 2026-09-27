@@ -158,6 +158,7 @@ appdaemon: AppDaemon - Will match anything with "appdaemon"
 | status                            | Container status. E.g. Up 13 days, Up 5 hours, Exited (0) 11 hours ago | -     |
 | health                            | Container health if available   | -     |
 | uptime                            | Container start time            | -     |
+| restart_count                     | Times the restart policy has restarted the container. Manual restarts are not counted, and it resets to 0 when the container is recreated | -     |
 | image                             | Container image                 | -     |
 | cpu_percentage                    | CPU usage. The CPU usage depends on the number of CPU cores, e.g. if you have 8 cores, this value can have a maximum of 800% | %     |
 | 1cpu_percentage                   | CPU Usage, between 0-100%       | %     |

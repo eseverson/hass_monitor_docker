@@ -50,6 +50,7 @@ from .const import (
     CONTAINER_INFO_IMAGE,
     CONTAINER_INFO_IMAGE_HASH,
     CONTAINER_INFO_NETWORK_AVAILABLE,
+    CONTAINER_INFO_RESTART_COUNT,
     CONTAINER_INFO_RESTART_POLICY,
     CONTAINER_INFO_STATE,
     CONTAINER_INFO_STATUS,
@@ -1065,6 +1066,9 @@ class DockerContainerAPI:
         self._info[CONTAINER_INFO_RESTART_POLICY] = (
             host_config.get("RestartPolicy") or {}
         ).get("Name") or "no"
+        # Restarts made by the restart policy; a manual `docker restart` does not
+        # count, and recreating the container starts it over at 0.
+        self._info[CONTAINER_INFO_RESTART_COUNT] = raw.get("RestartCount", 0)
 
         if self._network_error <= 5:
             if CONTAINER_INFO_NETWORK_AVAILABLE not in self._info:
