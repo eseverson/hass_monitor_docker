@@ -145,6 +145,14 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
             API
         ]
 
+        # Pre-fill the conditions form with what is saved, not the defaults,
+        # otherwise submitting it silently drops every non-default condition
+        conditions = self.data[CONF_MONITORED_CONDITIONS]
+        self._docker_conditions = [c for c in conditions if c in DOCKER_MONITOR_LIST]
+        self._container_conditions = [
+            c for c in conditions if c in CONTAINER_MONITOR_LIST
+        ]
+
         return self.async_show_menu(
             step_id="reconfigure",
             menu_options=["containers", "conditions"],
