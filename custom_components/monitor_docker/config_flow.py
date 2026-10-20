@@ -51,25 +51,29 @@ class DockerConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
     MINOR_VERSION = 1
-    data = {
-        # User
-        CONF_NAME: DEFAULT_NAME,
-        CONF_URL: "",
-        CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
-        CONF_CERTPATH: "",
-        CONF_RETRY: DEFAULT_RETRY,
-        # Containers
-        CONF_CONTAINERS: [],
-        CONF_CONTAINERS_EXCLUDE: [],  # Not relevant as all are selected
-        CONF_IGNORE_EPHEMERAL: False,
-        # Conditions
-        CONF_MONITORED_CONDITIONS: [],
-    }
     options = None
     _docker_api = None
     _config_entry: ConfigEntry | None = None
     _docker_conditions = DOCKER_PRE_SELECTION
     _container_conditions = CONTAINER_PRE_SELECTION
+
+    def __init__(self) -> None:
+        """Initialize the flow."""
+        # Per instance, a class-level dict would leak one flow's input into the next
+        self.data: dict[str, Any] = {
+            # User
+            CONF_NAME: DEFAULT_NAME,
+            CONF_URL: "",
+            CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+            CONF_CERTPATH: "",
+            CONF_RETRY: DEFAULT_RETRY,
+            # Containers
+            CONF_CONTAINERS: [],
+            CONF_CONTAINERS_EXCLUDE: [],  # Not relevant as all are selected
+            CONF_IGNORE_EPHEMERAL: False,
+            # Conditions
+            CONF_MONITORED_CONDITIONS: [],
+        }
 
     async def async_step_user(
         self, user_input: Mapping[str, Any] | None = None
