@@ -72,7 +72,7 @@ The `Monitor Docker` entry in the HACS default catalog installs the original ual
 
 ## Configuration
 
-Monitor Docker is set up entirely from the UI. YAML configuration is no longer supported, and a `monitor_docker:` block in `configuration.yaml` is ignored.
+Monitor Docker is set up entirely from the UI. YAML configuration is no longer supported: a leftover `monitor_docker:` block in `configuration.yaml` is not imported, and Home Assistant logs an error and shows a repair asking you to remove it.
 
 1. Go to **Settings → Devices & services → Add integration** and select **Monitor Docker**.
 2. Set up the connection to the Docker host (fields below).

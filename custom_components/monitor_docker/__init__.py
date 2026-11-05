@@ -1,17 +1,11 @@
 """Monitor Docker main component."""
 
-import asyncio
 import logging
-from datetime import timedelta
 
-from homeassistant import config_entries
 from homeassistant.config_entries import ConfigEntry
 import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
 from homeassistant.const import (
-    CONF_MONITORED_CONDITIONS,
     CONF_NAME,
-    CONF_SCAN_INTERVAL,
     CONF_URL,
     Platform,
 )
@@ -21,24 +15,13 @@ from homeassistant.exceptions import (
     ConfigEntryError,
     ConfigEntryAuthFailed,
 )
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.reload import async_setup_reload_service
+from homeassistant.helpers import device_registry as dr, issue_registry as ir
 
 from .config_flow import DockerConfigFlow
 from .const import (
     API,
-    CONF_CERTPATH,
-    CONF_CONTAINERS,
-    CONF_CONTAINERS_EXCLUDE,
-    CONF_RETRY,
     CONFIG,
-    CONTAINER_INFO_ALLINONE,
-    DEFAULT_NAME,
-    DEFAULT_RETRY,
-    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    MONITORED_CONDITIONS_LIST,
 )
 from .helpers import DockerAPI, should_include_container
 
@@ -46,27 +29,9 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
 
-DOCKER_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_URL, default=None): vol.Any(cv.string, None),
-        vol.Optional(
-            CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
-        ): cv.positive_int,
-        vol.Optional(CONF_MONITORED_CONDITIONS, default=[]): vol.All(
-            cv.ensure_list,
-            [vol.In(MONITORED_CONDITIONS_LIST)],
-        ),
-        vol.Optional(CONF_CONTAINERS, default=[]): cv.ensure_list,
-        vol.Optional(CONF_CONTAINERS_EXCLUDE, default=[]): cv.ensure_list,
-        vol.Optional(CONF_CERTPATH, default=""): cv.string,
-        vol.Optional(CONF_RETRY, default=DEFAULT_RETRY): cv.positive_int,
-    }
-)
-
-CONFIG_SCHEMA = vol.Schema(
-    {DOMAIN: vol.All(cv.ensure_list, [vol.Any(DOCKER_SCHEMA)])}, extra=vol.ALLOW_EXTRA
-)
+# Set up from the UI only. A leftover monitor_docker: block in configuration.yaml
+# gets an error in the log and a repair pointing at the integrations page.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 #################################################################
@@ -75,6 +40,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
+
+    # Versions that imported configuration.yaml raised a persistent repair per
+    # entry. Nothing raises it any more, so clear any that is still stored.
+    ir.async_delete_issue(hass, DOMAIN, f"remove_configuration_yaml_{entry.data[CONF_NAME]}")
 
     api = None
 
