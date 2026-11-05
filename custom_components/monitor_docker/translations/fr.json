@@ -1,9 +1,5 @@
 {
     "services": {
-        "reload": {
-            "description": "Recharger toutes les entités monitor_docker.",
-            "name": "Recharger"
-        },
         "restart": {
             "description": "Redémarre le container, the container doit être configuré dans monitor_docker.",
             "fields": {

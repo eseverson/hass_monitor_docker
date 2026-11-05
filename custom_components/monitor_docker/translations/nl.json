@@ -1,9 +1,5 @@
 {
     "services": {
-        "reload": {
-            "description": "Herlaad alle monitor_docker entiteiten.",
-            "name": "Herladen"
-        },
         "restart": {
             "description": "Herstart een container, deze container moet geconfigureerd zijn in monitor_docker.",
             "fields": {

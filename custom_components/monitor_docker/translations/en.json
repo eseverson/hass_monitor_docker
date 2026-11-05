@@ -1,18 +1,14 @@
 {
     "services": {
-        "reload": {
-            "description": "Reloads all monitor_docker entities.",
-            "name": "Reload"
-        },
         "restart": {
-            "description": "Restart a container, the container must be configured in monitor_docker.",
+            "description": "Restarts a container monitored by Monitor Docker.",
             "fields": {
                 "name": {
                     "description": "Name of the container.",
                     "name": "Name"
                 },
                 "server": {
-                    "description": "Name of the server, as given in config. Only required if you have more than one docker host config.",
+                    "description": "Name of the Docker host, as entered during setup. Only needed when you have more than one host.",
                     "name": "Server"
                 }
             },
@@ -22,57 +18,60 @@
     "config": {
         "step": {
             "user": {
-                "description": "Setup a connection to docker host",
+                "description": "Set up the connection to the Docker host.",
                 "data": {
-                    "name": "Name of Docker daemon",
-                    "url": "Host URL of Docker daemon",
+                    "name": "Name",
+                    "url": "URL",
                     "scan_interval": "Update interval (seconds)",
-                    "certpath": "If a TCP socket is used, you can define your Docker certificate path, forcing Monitor Docker to enable TLS. The filenames must be cert.pem and key.pem",
+                    "certpath": "Certificate path",
                     "retry": "Retry interval (seconds)"
+                },
+                "data_description": {
+                    "name": "Unique name for this Docker host, used as the prefix of its entity IDs.",
+                    "url": "Leave empty to use the local socket. For a remote daemon, use e.g. tcp://ip:2375 or https://ip:2376, without a trailing slash.",
+                    "certpath": "Directory holding ca.pem, cert.pem and key.pem. Setting it enables TLS for a TCP connection.",
+                    "retry": "How long to wait before reconnecting after a TCP error."
                 }
             },
             "reconfigure": {
-                "description": "Reconfigure settings of Docker daemon",
+                "description": "Choose what to change.",
                 "menu_options": {
                     "containers": "Containers to monitor",
                     "conditions": "Conditions to monitor"
                 }
             },
             "containers": {
-                "description": "Select which containers to monitor",
+                "description": "Select which containers to monitor.",
                 "data": {
-                    "containers": "Array of containers to monitor (keep empty to add all, and new)",
-                    "containers_exclude": "Array of containers to be excluded from monitoring, when all containers are included",
-                    "ignore_ephemeral": "Ignore ephemeral containers (--rm or no restart policy)"
-                }
-            },
-            "containers_rename": {
-                "description": "Select a display name for each container",
-                "data": {
-                    "rename_entity": "If rename is done, it changes also the entity name"
+                    "containers": "Containers",
+                    "ignore_ephemeral": "Ignore ephemeral containers"
+                },
+                "data_description": {
+                    "containers": "Leave empty to monitor all containers, including ones created later.",
+                    "ignore_ephemeral": "When monitoring all containers, skip those started with --rm or with restart policy \"no\"."
                 }
             },
             "conditions": {
-                "description": "Setup a connection to docker host",
+                "description": "Select which conditions to monitor.",
                 "data": {
-                    "monitored_docker_conditions": "Conditions of the controller to be monitored",
-                    "monitored_container_conditions": "Conditions of each container to be monitored"
+                    "monitored_docker_conditions": "Host conditions",
+                    "monitored_container_conditions": "Container conditions"
+                },
+                "data_description": {
+                    "monitored_docker_conditions": "Sensors to create for the Docker host.",
+                    "monitored_container_conditions": "Sensors to create for each container."
                 }
             }
         },
         "error": {
-            "name_exists": "Name already exists",
-            "invalid_connection": "Could not connect to Docker"
+            "name_exists": "A Docker host with this name already exists.",
+            "invalid_connection": "Could not connect to Docker."
         },
         "abort": {
-            "reauth_successful": "Reauthorization successful",
-            "reconfigure_successful": "Reconfiguration successful"
-        }
-    },
-    "issues": {
-        "remove_configuration_yaml": {
-            "description": "Fist ensure that your integration settings from configuration.yaml still are intact (renaming is no longer available). Explicit settings can be viewed and changed in the Reconfigure meny for each integration istance.\nRenaming can be done on device or entiti level in UI.\nThen remove your settings for {domain} {integration_title} from configuration.yaml to get rid of this message.",
-            "title": "Manually configured {integration_title} no longer used"
+            "already_configured": "A Docker host with this name is already configured.",
+            "reauth_successful": "Reauthorization successful.",
+            "reconfigure_successful": "Reconfiguration successful.",
+            "reconfigure_failed": "The entry to reconfigure could not be found."
         }
     }
 }
