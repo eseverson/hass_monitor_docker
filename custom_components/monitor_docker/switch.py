@@ -5,13 +5,10 @@ import logging
 import re
 from typing import Any
 
-import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.switch import ENTITY_ID_FORMAT, SwitchEntity
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -20,14 +17,10 @@ from homeassistant.util import slugify
 
 from .const import (
     API,
-    ATTR_NAME,
-    ATTR_SERVER,
-    CONF_CONTAINERS,
     CONFIG,
     CONTAINER,
     CONTAINER_INFO_STATE,
     DOMAIN,
-    SERVICE_RESTART,
     SIGNAL_ADD_CONTAINER,
 )
 from .helpers import (
@@ -37,8 +30,6 @@ from .helpers import (
     should_include_container,
 )
 
-
-SERVICE_RESTART_SCHEMA = vol.Schema({ATTR_NAME: cv.string, ATTR_SERVER: cv.string})
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,41 +73,6 @@ async def async_setup_platform(
 ):
     """Set up the Monitor Docker Switch."""
 
-    async def async_restart(parm) -> None:
-        cname = parm.data[ATTR_NAME]
-        cserver = parm.data.get(ATTR_SERVER, None)
-
-        server_name = name
-        if cserver is not None:
-            if cserver not in hass.data[DOMAIN]:
-                _LOGGER.error("Server '%s' is not configured", cserver)
-                return
-            else:
-                server_name = cserver
-
-        server_config = hass.data[DOMAIN][server_name][CONFIG]
-        server_api = hass.data[DOMAIN][server_name][API]
-
-        if len(server_config[CONF_CONTAINERS]) == 0:
-            if server_api.get_container(cname):
-                await server_api.get_container(cname).restart()
-            else:
-                _LOGGER.error(
-                    "Service restart failed, container '%s' does not exist", cname
-                )
-        elif cname in server_config[CONF_CONTAINERS]:
-            _LOGGER.debug("Trying to restart container '%s'", cname)
-            if server_api.get_container(cname):
-                await server_api.get_container(cname).restart()
-            else:
-                _LOGGER.error(
-                    "Service restart failed, container '%s'does not exist", cname
-                )
-        else:
-            _LOGGER.error(
-                "Service restart failed, container '%s' is not configured", cname
-            )
-
     if discovery_info is None:
         return
 
@@ -151,12 +107,6 @@ async def async_setup_platform(
         return False
 
     async_add_entities(switches, True)
-
-    # platform = entity_platform.current_platform.get()
-    # platform.async_register_entity_service(SERVICE_RESTART, {}, "async_restart")
-    hass.services.async_register(
-        DOMAIN, SERVICE_RESTART, async_restart, schema=SERVICE_RESTART_SCHEMA
-    )
 
     return True
 
