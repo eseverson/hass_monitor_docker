@@ -1592,7 +1592,11 @@ class DockerContainerEntity(Entity):
         them were dropped at startup. async_setup_entry registers the host device
         before forwarding the platforms, so the lookup below always resolves.
         """
-        device_info = DeviceInfo(self._attr_device_info or {})
+        # A fresh copy, so the via_device_id below never lands on the shared
+        # _attr_device_info. Unpacked, because DeviceInfo is a keyword-only
+        # dataclass since HA 2026.11 and rejects a mapping passed positionally;
+        # the TypedDict it replaced takes the same keywords.
+        device_info = DeviceInfo(**(self._attr_device_info or {}))
         config_entry = self.platform.config_entry if self.platform else None
         if self.hass is None or config_entry is None:
             return device_info
