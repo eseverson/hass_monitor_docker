@@ -1,178 +1,178 @@
-# Custom Monitor Docker component for Home Assistant
+# Monitor Docker for Home Assistant
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg?style=for-the-badge)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://hacs.xyz/docs/faq/custom_repositories/)
 
 ## About
 
-I am the third owner of this code-base. Sander Huisman initially started [Docker Monitor](https://github.com/Sanderhuisman/docker_monitor), which was then improved upon by Alexander (ualex73) in his version of [Docker Monitor](https://github.com/ualex73/docker_monitor). This repository is my adaption of Alexander's repository with some improvements:
+Monitor Docker lets you track Docker hosts and their containers from Home Assistant, and start, stop and restart containers. It connects to the Docker daemon locally through its UNIX socket, or remotely over TCP with optional TLS.
 
-- Added a config flow (basis built by [dala318](https://github.com/ualex73/monitor_docker/issues/173))
-- Updated the naming of the entities
-- Simplified the configuration flow
+This repository is a maintained fork of earlier versions of the integration; see [Credits and history](#credits-and-history).
 
-Possible extra changes may follow!
+## Preparing Docker
 
-## Monitor Docker
+When Home Assistant runs in a Docker container, mount the Docker socket into it as `-v /var/run/docker.sock:/var/run/docker.sock`.
 
-The Monitor Docker allows you to monitor Docker and container statistics and turn on/off containers. It can connect to the Docker daemon locally or remotely. When Home Assistant is used within a Docker container, the Docker daemon should be mounted as follows `-v /var/run/docker.sock:/var/run/docker.sock`.
-
-**Docker run Example**
+**docker run example**
 ```
 docker run -d \
-... \
--v /var/run/docker.sock:/var/run/docker.sock \
+  ... \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   homeassistant/home-assistant
 ```
 
-**docker-compose.yaml Example**
-```
+**docker-compose.yaml example**
+```yaml
 services:
   hass:
     image: homeassistant/home-assistant
-...
+    ...
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-...
+    ...
 ```
-NOTE: Making `/var/run/docker.sock` read-only has no effect because it is a socket (not a file).
 
-**Raspberry Pi (Raspbian)**
+NOTE: Mounting `/var/run/docker.sock` read-only (`:ro`) has no effect, because it is a socket and not a file.
 
-Using a Raspberry Pi with Raspbian it could happen no memory is reported. In such case, the Docker API does not report it to Monitor Docker. Making the following changes normally fixes the problem:
-- Open the file `/boot/cmdline.txt`
-- Add the following to the end of the existing line `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory`
-- Reboot your Raspberry Pi
+Home Assistant OS and Supervised installations do not expose the Docker socket; see the [Q&A](#qa) for how to connect through a socket proxy.
 
-NOTE: Add the line to the existing line, do *not* replace it
+### No memory values reported
+
+If every memory sensor reads 0, the Docker API is not reporting memory usage, usually because the memory cgroup is disabled in the kernel.
+
+**Raspberry Pi (Raspberry Pi OS)**
+- Open `/boot/cmdline.txt` (on newer releases, `/boot/firmware/cmdline.txt`).
+- Append `cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory` to the end of the existing line. Do *not* add a new line or replace the existing one.
+- Reboot.
 
 **Ubuntu / Debian**
+- Open `/etc/default/grub`.
+- Change `GRUB_CMDLINE_LINUX_DEFAULT=""` to `GRUB_CMDLINE_LINUX_DEFAULT="quiet cgroup_enable=memory swapaccount=1"`.
+- Run `sudo update-grub`.
+- Reboot.
 
-Also on Ubuntu/Debian, no memory may be shown, the following changes could solve your problem:
-- Open the file `/etc/default/grub`
-- Modify the `GRUB_CMDLINE_LINUX_DEFAULT=""` to `GRUB_CMDLINE_LINUX_DEFAULT="quiet cgroup_enable=memory swapaccount=1"`
-- Run `sudo update-grub`
-- Reboot your Ubuntu/Debian
-
-NOTE: This is untested, use at your own risk!
+NOTE: The Ubuntu/Debian steps are untested; use them at your own risk.
 
 ## Installation
 
-### HACS - Recommended
-- Have [HACS](https://hacs.xyz) installed, this will allow you to easily manage and track updates.
-- Search for 'Monitor Docker'.
-- Click Install below the found integration.
-- Configure using the configuration instructions below.
-- If applicable, add the volume `/var/run/docker.sock` to your Home Assistant container.
-- Restart Home-Assistant.
+### HACS (recommended)
+
+The `Monitor Docker` entry in the HACS default catalog installs the original ualex73 version, not this fork. To install this fork, add it as a custom repository:
+
+1. In HACS, open the ⋮ menu and choose **Custom repositories**.
+2. Add `https://github.com/eseverson/hass_monitor_docker` with the type **Integration**.
+3. Search for **Monitor Docker** and download it.
+4. If applicable, mount `/var/run/docker.sock` into your Home Assistant container (see [Preparing Docker](#preparing-docker)).
+5. Restart Home Assistant.
 
 ### Manual
-- Copy directory `custom_components/monitor_docker` to your `<config dir>/custom_components` directory.
-- Configure with the config below.
-- If applicable, add the volume `/var/run/docker.sock` to your Home Assistant container.
-- Restart Home-Assistant.
 
-### Configuration
+1. Copy the `custom_components/monitor_docker` directory into `<config dir>/custom_components/`.
+2. If applicable, mount `/var/run/docker.sock` into your Home Assistant container.
+3. Restart Home Assistant.
 
-#### GUI Assisted
+## Configuration
 
-1. Klick Add integration and select "Monitor Docker"
-2. Set-up connection to Docker host
-3. Select which Containers to monitor
-4. Select which Conditions to monitor for both the host and each Container
+Monitor Docker is set up entirely from the UI. YAML configuration is no longer supported, and a `monitor_docker:` block in `configuration.yaml` is ignored.
 
-#### Manual
+1. Go to **Settings → Devices & services → Add integration** and select **Monitor Docker**.
+2. Set up the connection to the Docker host (fields below).
+3. Select which containers to monitor.
+4. Select which conditions to monitor for the host and for each container.
 
-> **IMPORTANT NOTICE!**: While manual configuration in `configuration.yaml` is still possible it will only be converted into a UI ConfigEntry upon first boot and after that ignored (while displaying a Repair issue to remove deprecaded onused config). It's recommended to setup the integration directly from UI using above process
+Add the integration once per Docker host, each with its own name.
 
-To use the `monitor_docker` in your installation, add the following to your `configuration.yaml` file:
+### Connection
+
+| Field | Description |
+| ----- | ----------- |
+| Name | Name of this Docker host, used as the prefix of its entity IDs. Must be unique. Defaults to `Docker`. |
+| URL | Leave empty to use the local socket (`unix:///var/run/docker.sock`). For a remote daemon, use `tcp://ip:2375`, `http://ip:2375` or `https://ip:2376`. Do not end the URL with a slash. SSH is not supported. |
+| Update interval | Seconds between updates. Defaults to 10. |
+| Certificate path | Directory inside Home Assistant holding `ca.pem`, `cert.pem` and `key.pem`. Setting it enables TLS for a TCP connection; an `http://` or `tcp://` URL is switched to `https://`. |
+| Retry interval | Seconds to wait before reconnecting after a TCP error. Defaults to 60. |
+
+### Containers
+
+| Field | Description |
+| ----- | ----------- |
+| Containers | The containers to monitor. Leave empty to monitor all of them, including containers created later. |
+| Ignore ephemeral containers | When monitoring all containers, skip those Docker marks as ephemeral: started with `--rm`, or with restart policy `no`. Useful for one-off `docker run` containers that would otherwise each leave a device behind. |
+
+### Changing the configuration
+
+Open the integration under **Settings → Devices & services**, then choose **Reconfigure** from the ⋮ menu to change the monitored containers or conditions. The connection settings cannot be changed afterwards; to change them, remove the integration and add it again.
+
+Devices for containers that no longer exist, or are no longer monitored, are removed automatically when the integration loads. You can also delete a container's device by hand from its device page.
+
+## Entities
+
+Each Docker host becomes a device, and each monitored container becomes a device linked to its host. Every entity has a unique ID, so you can rename entities and devices in the UI.
+
+Each container device has:
+- a **switch** that starts (on) and stops (off) the container: `switch.<name>_<container>`
+- a **Restart container** button: `button.<name>_<container>_restart`
+- one **sensor** per selected container condition: `sensor.<name>_<container>_<condition>`
+
+The host device has one sensor per selected host condition: `sensor.<name>_<condition>`.
+
+For example, with the default name `Docker`, the CPU sensor of a container named `jellyfin` is `sensor.docker_jellyfin_cpu`.
+
+### Host conditions
+
+The defaults are marked with ✓.
+
+| Condition | Description | Unit | Default |
+| --------- | ----------- | ---- | :-----: |
+| version | Docker version | - | ✓ |
+| containers_running | Number of running containers | - | ✓ |
+| containers_paused | Number of paused containers | - | |
+| containers_stopped | Number of stopped containers | - | |
+| containers_total | Total number of containers | - | |
+| containers_cpu_percentage | CPU usage of all containers. This scales with the number of cores: with 8 cores, it can reach 800% | % | ✓ |
+| containers_1cpu_percentage | CPU usage of all containers, scaled to 0–100% | % | |
+| containers_memory | Memory usage of all containers | MiB | ✓ |
+| containers_memory_percentage | Memory usage of all containers | % | |
+| images | Number of images | - | |
+
+### Container conditions
+
+| Condition | Description | Unit | Default |
+| --------- | ----------- | ---- | :-----: |
+| state | Container state: created, restarting, running, removing, paused, exited or dead | - | |
+| status | Container status, e.g. `Up 13 days` or `Exited (0) 11 hours ago` | - | ✓ |
+| health | Container health, if the container defines a health check | - | |
+| uptime | Container start time | timestamp | ✓ |
+| image | Container image | - | ✓ |
+| image_hash | ID of the container's image | - | |
+| restart_count | Times the restart policy has restarted the container. Manual restarts are not counted, and it resets to 0 when the container is recreated | - | |
+| cpu_percentage | CPU usage. This scales with the number of cores: with 8 cores, it can reach 800% | % | ✓ |
+| 1cpu_percentage | CPU usage, scaled to 0–100% | % | |
+| memory | Memory usage | MiB | ✓ |
+| memory_percentage | Memory usage | % | |
+| network_speed_up | Upload speed. **Not** available when the network mode is `host` or `none` | KiB/s | |
+| network_speed_down | Download speed. **Not** available when the network mode is `host` or `none` | KiB/s | |
+| network_total_up | Total uploaded. **Not** available when the network mode is `host` or `none` | MiB | |
+| network_total_down | Total downloaded. **Not** available when the network mode is `host` or `none` | MiB | |
+| allinone | Special condition: creates a single sensor per container that holds all the other selected conditions as attributes, **instead of** one sensor per condition | - | |
+
+## Actions
+
+`monitor_docker.restart` restarts a monitored container.
+
+| Field | Description |
+| ----- | ----------- |
+| name | Name of the container (required). |
+| server | Name of the Docker host, as entered during setup. Only needed when you have more than one host. |
 
 ```yaml
-# Example configuration.yaml entry
-monitor_docker:
-  - name: Docker
-    containers:
-      - appdaemon
-      - db-dsmr
-      - db-hass
-      - deconz
-      - hass
-      - influxdb
-      - mosquitto
-      - nodered
-      - unifi
-    rename:
-      appdaemon: AppDaemon
-      db-dsmr: "Database DSMR-Reader"
-      db-hass: Database Home Assistant
-      deconz: DeCONZ
-      dsmr: "DSMR-Reader"
-      hass: Home Assistant
-      influxdb: InfluxDB
-      mosquitto: Mosquitto
-      nodered: "Node-RED"
-      unifi: UniFi
-    monitored_conditions:
-      - version
-      - containers_running
-      - containers_total
-      - state
-      - status
-      - memory
-```
-Important NOTE: The rename functionality works with regular expression. If you got containers with roughly the same name, it could match the wrong one. Examples:
-```
-appdaemon: AppDaemon - Will match anything with "appdaemon" 
-^appdaemon: AppDaemon - Will match if it starts with "appdaemon" 
-^appdaemon$: AppDaemon - Only match if it exactly matches "appdaemon", thus "appdaemon-2" will not match
+action: monitor_docker.restart
+data:
+  name: jellyfin
 ```
 
-#### Configuration variables
+## Debugging
 
-| Parameter                   | Type                       | Description                                                           |
-| --------------------------- | -------------------------- | --------------------------------------------------------------------- |
-| name                        | string         (Required)  | Client name of Docker daemon. Defaults to `Docker`.                   |
-| url                         | string         (Optional)  | Host URL of Docker daemon. Defaults to `unix://var/run/docker.sock`. Remote Docker daemon via TCP socket is also supported, use e.g. `http://ip:2375`. Do NOT add a slash add the end, this will invalidate the URL. For TLS support see the Q&A section. SSH is not supported. |
-| scan_interval               | time_period    (Optional)  | Update interval. Defaults to 10 seconds.                              |
-| retry                       | time_period    (Optional)  | Retry interval when a TCP error is detected. Defaults to 60 seconds.  |
-| certpath                    | string         (Optional)  | If a TCP socket is used, you can define your Docker certificate path, forcing Monitor Docker to enable TLS. The filenames must be `cert.pem` and `key.pem`|
-| containers                  | list           (Optional)  | Array of containers to monitor. Defaults to all containers.           |
-| containers_exclude          | list           (Optional)  | Array of containers to be excluded from monitoring, when all containers are included. |
-| monitored_conditions        | list           (Optional)  | Array of conditions to be monitored. Defaults to all conditions.      |
-| rename                      | dictionary     (Optional)  | Dictionary of containers to rename. Renaming is done on the name in HA Lovelace, not the entity name (see `rename_entity`). Default no renaming. |
-| rename_entity               | boolean        (Optional)  | If rename is enabled, it changes the name in HA Lovelace, not the entity name. Enable this setting to also rename the entity name (Default: False) |
-
-
-| Monitored Conditions              | Description                     | Unit  |
-| --------------------------------- | ------------------------------- | ----- |
-| version                           | Docker version                  | -     |
-| containers_total                  | Total number of containers      | -     |
-| containers_running                | Number of running containers    | -     |
-| containers_paused                 | Number of paused containers     | -     |
-| containers_stopped                | Number of stopped containers    | -     |
-| containers_cpu_percentage         | CPU Usage. The CPU usage depends on the number of CPU cores, e.g. if you have 8 cores, this value can have a maximum of 800% | %     |
-| containers_1cpu_percentage        | CPU Usage, between 0-100%       | %     |
-| containers_memory                 | Memory usage                    | MB    |
-| containers_memory_percentage      | Memory usage                    | %     |
-| images                            | Number of images                | -     |
-| state                             | Container state. This is created, restarting, running, removing, paused, exited or dead  | -     |
-| status                            | Container status. E.g. Up 13 days, Up 5 hours, Exited (0) 11 hours ago | -     |
-| health                            | Container health if available   | -     |
-| uptime                            | Container start time            | -     |
-| restart_count                     | Times the restart policy has restarted the container. Manual restarts are not counted, and it resets to 0 when the container is recreated | -     |
-| image                             | Container image                 | -     |
-| cpu_percentage                    | CPU usage. The CPU usage depends on the number of CPU cores, e.g. if you have 8 cores, this value can have a maximum of 800% | %     |
-| 1cpu_percentage                   | CPU Usage, between 0-100%       | %     |
-| memory                            | Memory usage                    | MB    |
-| memory_percentage                 | Memory usage                    | %     |
-| network_speed_up                  | Network speed upstream. **Not** available when using network mode is 'host' | kB/s  |
-| network_speed_down                | Network speed downstream. **Not** available when using network mode is 'host' | kB/s  |
-| network_total_up                  | Network total upstream. **Not** available when using network mode is 'host' | MB    |
-| network_total_down                | Network total downstream. **Not** available when using network mode is 'host' | MB    |
-| allinone                          | This is a special condition and when used, it will only create 1 sensor per container with all the monitored conditions as attribute value. NOTE: If you use this sensor, all other sensors are NOT created, just 1 sensor |-     |
-
-### Debugging
-
-It is possible to debug the Monitor Docker component, this can be done by adding the following lines to the `configuration.yaml` file:
+To enable debug logging, add the following to `configuration.yaml`, or use **Enable debug logging** on the integration's page:
 
 ```yaml
 logger:
@@ -180,13 +180,12 @@ logger:
     custom_components.monitor_docker: debug
 ```
 
-### Q&A
-Here are some possible questions/errors with their answers.
+## Q&A
 
-1. **Question:** Does this integration work with the HASS or supervisord installers?  
-    **Answer:** Yes, with an external docker container. Home Assistant supervised does not expose the Docker UNIX/TCP socket. However, you can use an external docker container named `docker-socket-proxy`. Start this docker with the following docker-compose code. It exposes the socket over TCP and `monitor_docker` can listen to it.
+1. **Question:** Does this integration work with Home Assistant OS or Supervised?  
+   **Answer:** Yes, through a socket proxy. These installations do not expose the Docker UNIX or TCP socket, but you can run [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) on the host to expose it over TCP. Other users have tested and confirmed this setup, but I cannot provide support for it. Start the proxy with the following docker-compose file, then enter `http://<host_ip>:2375` as the URL when setting up the integration. `POST=1` is what allows the switches and buttons to start, stop and restart containers.
     ```yaml
-    # Proxy the Docker sock so that we can pick up stats for HomeAssistant
+    # Proxy the Docker socket so Monitor Docker can read container statistics
     services:
       dockerproxy:
         image: tecnativa/docker-socket-proxy
@@ -209,76 +208,66 @@ Here are some possible questions/errors with their answers.
           - NODES=1
           - PLUGINS=1
           - SERVICES=1
-          - SESSSION=1
+          - SESSION=1
           - SWARM=1
           - POST=1
     ```
-    Add the following to your `configuration.yaml`:
-```yaml
-    monitor_docker:
-      - name: Docker
-        url: http://<host_ip>:2375
-```
 2. **Error:** `Missing valid docker_host.Either DOCKER_HOST or local sockets are not available.`  
-    **Answer:** Most likely the socket is not mounted properly in your Home Assistant container. Please check if you added the volume `/var/run/docker.sock`
-3. **Error:** `aiodocker.exceptions.DockerError: DockerError(900, "Cannot connect to Docker Engine via http://10.0.0.1:2376...)`.  
-    **Answer:** You are trying to connect via TCP and most likely the remote address is unavailable. Test it with the command `docker -H tcp://10.0.0.1:2376 ps` if it works (replace `10.0.0.1` with your IP address). Also you can consult the following URL for more help: https://docs.docker.com/config/daemon/remote-access/
-4. **Question:** Is Docker TCP socket via TLS supported?  
-    **Answer:** Yes it is. You need to set the URL to e.g. `http://ip:2376` and the environment variables `DOCKER_TLS_VERIFY=1` and `DOCKER_CERT_PATH=<path to your certificates>` need to be set
-The following is a docker-compose example of how to set the environment variables and the volume with the certificates:
-```
-services:
-  hass:
-    image: homeassistant/home-assistant
-...
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      # The files need to be named "ca.pem", "cert.pem" and "key.pem"
-      - ./certs:/certs
-    environment:
-      - DOCKER_TLS_VERIFY=1
-      - DOCKER_CERT_PATH=/certs
-...
-```
-5. **Question:** Can this integration monitor 2 or more Docker instances?  
-    **Answer:** Yes it can. Just duplicate the entries and give it an unique name and define the url as shown below:
-```yaml
-# Example configuration.yaml entry
-monitor_docker:
-  - name: Docker
-    containers:
-    ...
-  - name: RemoteDocker
-    url: http://10.0.0.1:2376
-    containers:
-    ...
-```
-*NOTE*: The integration supports multiple Docker instances, but you can only define 1 TLS configuration which is applied to all (thus you cannot mix TCP with and without TLS).  
-6. **Question:** Can create, delete or re-create a container be implemented in the integration?  
-    **Answer:** The used Docker library has no easy (and safe) way to handle such functionality. Please use *docker-compose* to handle such operations. If anybody can make this fully work in a safe way, I'll be happy to merge the PR  
+   **Answer:** The Docker socket is most likely not mounted in your Home Assistant container. Check that you added the `/var/run/docker.sock` volume.
+3. **Error:** `aiodocker.exceptions.DockerError: DockerError(900, "Cannot connect to Docker Engine via http://10.0.0.1:2376...)`  
+   **Answer:** You are connecting over TCP and the remote address cannot be reached. Test it with `docker -H tcp://10.0.0.1:2376 ps` (replace `10.0.0.1` with your IP address). Docker's [remote access guide](https://docs.docker.com/engine/daemon/remote-access/) has more help.
+4. **Question:** Is the Docker TCP socket over TLS supported?  
+   **Answer:** Yes. Use a URL such as `https://ip:2376` and set **Certificate path** to a directory inside Home Assistant that holds your `ca.pem`, `cert.pem` and `key.pem`. The certificate's hostname is not checked. For example, mount the certificates with docker-compose and enter `/certs` as the certificate path:
+    ```yaml
+    services:
+      hass:
+        image: homeassistant/home-assistant
+        ...
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          # The files must be named "ca.pem", "cert.pem" and "key.pem"
+          - ./certs:/certs
+        ...
+    ```
+5. **Question:** Can this integration monitor 2 or more Docker hosts?  
+   **Answer:** Yes. Add the integration once for each host, with a unique name and that host's URL. Each host has its own TLS setting, so TLS and plain TCP connections can be mixed.
+6. **Question:** Can creating, deleting or recreating a container be added to the integration?  
+   **Answer:** The Docker library this integration uses has no easy and safe way to do this. Use *docker compose* for these operations. If anybody can make this work safely, I'll be happy to merge the PR.
 7. **Question:** Can you add more security to a switch?  
-    **Answer:** No, this isn't possible from the integration. You need to do this directly in Lovelace itself, within the card e.g. https://github.com/iantrich/restriction-card  
-8. **Question:** All the reported memory values are 0 (zero), can this be fixed in the integration?  
-    **Answer:** No, the integration just uses the available information from the API and you should fix your Docker  
-9. **Question:** Is it possible to monitor HASS.IO?  
-    **Answer:** Yes, please use the Docker Socker Proxy https://github.com/Tecnativa/docker-socket-proxy and configure http://ip:port to connect to the proxy. This has been tested and verified by other users, but I cannot give support on it.  
-10. **Question:** I get a permission denied error?  
-     **Answer:** In general Docker and HASS.IO are running as root and always can connect to /var/run/docker.sock. If you run in a venv environment or directly with Python, you may need to add the "docker" group to the user used for Home Assistant. The following commands may help you, and it is recommended to reboot after "usermod":
-  ```
-  $ sudo usermod -a -G docker <user>
-  $ sudo reboot
-  ```
-11. **Question:** Can you add the feature to check if there are updates to images in e.g. hub.docker.com?  
-     **Answer:** Such feature goes outside of the scope of monitor_docker and there are few other options available for this. You can use https://newreleases.io or https://github.com/crazy-max/diun/
-12. **Question:** Is Docker via SSH supported?  
-     **Answer:** No, the Docker library used, does not support it. There is a small _but_, maybe you can get it to work via `socat`. The following URL may help you: https://serverfault.com/questions/127794/forward-local-port-or-socket-file-to-remote-socket-file/362833#362833
-13. **Question:** Can the sensors have unique entity identifiers? This is useful for renaming it in the HA GUI  
-     **Answer:** This is not possible, due to the nature of how this integration works. The docker name needs to be consistent across restart and recreate, this can be only done by overruling the entity identifier as it is working now
+   **Answer:** Not from the integration. Restrict it on the dashboard instead, for example with a card's tap action confirmation, or a card such as [restriction-card](https://github.com/iantrich/restriction-card).
+8. **Question:** All the reported memory values are 0 (zero). Can this be fixed in the integration?  
+   **Answer:** No. The integration only reports what the Docker API provides, so the fix is in your Docker host; see [No memory values reported](#no-memory-values-reported).
+9. **Question:** I get a permission denied error.  
+   **Answer:** Docker and Home Assistant OS run as root and can always connect to `/var/run/docker.sock`. If you run Home Assistant in a Python venv or directly with Python, add the user that runs Home Assistant to the `docker` group, then reboot:
+    ```
+    $ sudo usermod -a -G docker <user>
+    $ sudo reboot
+    ```
+10. **Question:** Can you add a check for image updates on e.g. Docker Hub?  
+    **Answer:** That is outside the scope of Monitor Docker, and other tools already do it, such as [newreleases.io](https://newreleases.io) or [Diun](https://github.com/crazy-max/diun/).
+11. **Question:** Is Docker over SSH supported?  
+    **Answer:** No, the Docker library this integration uses does not support it. You may be able to get it working by forwarding the socket with `socat`; [this answer](https://serverfault.com/questions/127794/forward-local-port-or-socket-file-to-remote-socket-file/362833#362833) may help.
+12. **Question:** Can I rename the entities?  
+    **Answer:** Yes. Every entity has a unique ID, so you can rename it, or its device, in the UI. Entity IDs are built from the host name and the container name, so a container that is recreated with the same name keeps its entities and history.
 
-## Credits
+## Credits and history
 
-* [Sanderhuisman](https://github.com/Sanderhuisman/docker_monitor)
-* [Alexander - ualex73](https://github.com/ualex73/monitor_docker)
+This is the fourth generation of this code base:
+
+- **[Sander Huisman](https://github.com/Sanderhuisman/docker_monitor)** started it as Docker Monitor.
+- **[Alexander (ualex73)](https://github.com/ualex73/monitor_docker)** rewrote it from threads to asyncio as Monitor Docker, and added much of the functionality documented here. His version is the one in the HACS default catalog.
+- **[Getslow6](https://github.com/Getslow6/monitor_docker)** forked Alexander's repository and added a config flow (based on work by [dala318](https://github.com/ualex73/monitor_docker/issues/173)), updated the entity naming with devices per container and a switch as each device's main entity, and simplified the configuration. Setup through `configuration.yaml` was removed along the way.
+- **[Evan Severson](https://github.com/eseverson/hass_monitor_docker)** maintains this fork, which adds:
+  - the option to ignore ephemeral containers
+  - automatic removal of stale container devices, and manual device deletion
+  - registering devices for containers created after startup
+  - valid, slugified entity IDs
+  - linking container devices to their host
+  - the `restart_count` condition
+  - clean recovery when the Docker daemon restarts
+  - reconfigure fixes that keep the saved containers and conditions
+  - compatibility with Home Assistant 2026.11
+  - brand images shipped with the integration
 
 ## License
 
