@@ -74,7 +74,6 @@ from .const import (
     DOCKER_STATS_MEMORY,
     DOCKER_STATS_MEMORY_PERCENTAGE,
     DOMAIN,
-    VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -145,8 +144,6 @@ class DockerAPI:
         self._tcp_connector = None
         self._tcp_session = None
         self._tcp_ssl_context = None
-
-        _LOGGER.debug("[%s]: Helper version: %s", self._instance, VERSION)
 
         self._interval: int = config[CONF_SCAN_INTERVAL]
         self._retry_interval: int = config[CONF_RETRY]
